@@ -15,6 +15,10 @@ $sourceTranscriptUrl = $env:sourceTranscriptUrl
 #$sourceLanguageUrl = "https://<url>/<file>.txt"
 $sourceLanguageUrl = $env:sourceLanguageUrl
 
+# ID of an already existing language model.
+# If $sourceLanguageUrl is provided, this will be overwritten.
+$languageModelId = $env:languageModelId
+
 # ZIP file containing FFmpeg tool (expects ffmpeg.exe in root).
 #$ffmpegUrl = "https://<url>/ffmpeg.zip"
 $ffmpegUrl = $env:ffmpegUrl
@@ -31,14 +35,14 @@ $speechKey = $env:speechKey
 #$speechRegion = "northeurope"
 $speechRegion = $env:speechRegion
 
-# GUID of speech endpoint to run the initial transcription against. Better endpoint (e.g. with language model, pre-trained etc.) = better results. Get from Speech portal (CRIS.ai).
+# GUID of speech endpoint to run the initial transcription against. 
+# Better endpoint (e.g. with language model, pre-trained etc.) = better results. Suitable for multiple iterations.
+# Get from Speech portal (CRIS.ai).
+# If not specified, new baseline endpoint will be created.
 #$speechEndpoint = ""
 $speechEndpoint = $env:speechEndpoint
 
-# If there's a language model already pre-trained, use that.
-$languageModelId = $env:languageModelId
-
-# How are datasets, models, tests and endpoints named in Speech Service.
+# How will datasets, models, tests and endpoints be named in Speech Service.
 #$processName = ""
 $processName = $env:processName
 
@@ -53,6 +57,11 @@ python3 --version
 npm --version
 node --version
 /usr/bin/SpeechCLI/speech --version
+
+# Config CLI
+& /usr/bin/SpeechCLI/speech config set --name Build --key $speechKey --region $speechRegion --select
+$idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
+$defaultScenarioId = "c7a69da3-27de-4a4b-ab75-b6716f6321e5" # ID of the baseline model which should be used by default, this represents en-us "V2.5 Conversational (AM/LM adapt)"
 
 # Parse source files into arrays and remove empty lines. Each line is expected to be a file URL.
 Write-Host "Downloading source files."
@@ -75,12 +84,7 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
 
     # Run FFmpeg on source files - chunk & convert
     New-Item ./Chunks-$i -ItemType Directory -Force
-    if ($docker -eq "false") {
-        ./ffmpeg/ffmpeg.exe -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time 10 -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
-    }
-    else {
-        ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time 10 -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
-    }
+    ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time 10 -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
 
     # Download full transcript
     Invoke-WebRequest $sourceTxts[$i] -OutFile $rootDir/$processName-source-transcript-$i.txt
@@ -92,7 +96,27 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     }
 }
 
-#TODO: if language data available, create baseline endpoint with language model first
+# If language data provided, create language model.
+if (!($null -eq $sourceLanguageUrl)) {
+    Invoke-WebRequest $sourceLanguageUrl -OutFile $rootDir/$processName-source-language.txt
+    
+    Write-Host "Creating language model."
+    $languageDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --language $rootDir/$processName-source-language.txt --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
+    $languageModelId = & /usr/bin/SpeechCLI/speech model create --name $processName-Lang -lng $languageDataset -s $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+}
+
+# If baseline endpoint not provided, create one with baseline models first.
+# TODO: make dynamic, based on locale
+if ($null -eq $speechEndpoint) {
+    # Is there a language model present? If not, use the baseline model.
+    if ($null -eq $sourceLanguageUrl -and $null -eq $languageModelId) {
+        $languageModelId = $defaultScenarioId
+    }
+
+    # Create baseline endpoint.
+    Write-Host "Creating baseline endpoint."
+    $speechEndpoint = & /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l en-us -m $defaultScenarioId -lm $languageModelId --wait  | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
+}
 
 # Run Batcher, if there's no machine-transcript present
 # - machine transcript creation is time consuming, this allows to skip it if the process needs to be run again
@@ -135,36 +159,24 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++)
 Write-Host "Transcribe done. Writing cleaned-transcript.txt"
 $cleaned | Out-File "$rootDir/$processName-cleaned-transcript.txt"
 
-# Config CLI
-& /usr/bin/SpeechCLI/speech config set --name Build --key $speechKey --region $speechRegion --select
-
 # Prepare ZIP and TXT for test and train datasets
 Write-Host "Compiling audio and transcript files."
 & /usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage 10
 
-$idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
 
 # Create acoustic datasets
 Write-Host "Creating acoustic datasets for training and testing."
 $trainDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 
-# Create language dataset
-#Invoke-WebRequest $sourceLanguageUrl -OutFile "$rootDir\$processName-Compiled\language.txt"
-#$languageDataset = .\speech dataset create --name "$processName-Lang" --language "$rootDir\$processName-Compiled\language.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
-
 # Create acoustic model with scenario "English conversational"
 Write-Host "Creating acoustic model."
-$model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale en-us --audio-dataset $trainDataset --scenario "c7a69da3-27de-4a4b-ab75-b6716f6321e5" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+$model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale en-us --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 
 # Create test
 & /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --wait
 
-# Create language model
-#$langModel = .\speech model
-$langModel = $languageModelId
-
 # Create endpoint
-& /usr/bin/SpeechCLI/speech endpoint create --name $processName --model $model --language-model $langModel --wait
+& /usr/bin/SpeechCLI/speech endpoint create --name $processName --model $model --language-model $languageModelId --wait
 
 Write-Host "Process done."
