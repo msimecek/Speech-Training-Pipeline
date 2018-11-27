@@ -61,7 +61,7 @@ node --version
 # Config CLI
 & /usr/bin/SpeechCLI/speech config set --name Build --key $speechKey --region $speechRegion --select
 $idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
-$defaultScenarioId = "d36f6c4b-8f75-41d1-b126-c38e46a059af" # ID of the baseline model which should be used by default, this represents en-us "Unified V3 EMBR - ULM"
+$defaultScenarioId = "c7a69da3-27de-4a4b-ab75-b6716f6321e5" # ID of the baseline model which should be used by default, this represents en-us "V2.5 Conversational (AM/LM adapt)"
 
 # Parse source files into arrays and remove empty lines. Each line is expected to be a file URL.
 Write-Host "Downloading source files."
@@ -84,12 +84,7 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
 
     # Run FFmpeg on source files - chunk & convert
     New-Item ./Chunks-$i -ItemType Directory -Force
-    if ($docker -eq "false") {
-        ./ffmpeg/ffmpeg.exe -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time 10 -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
-    }
-    else {
-        ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time 10 -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
-    }
+    ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time 10 -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
 
     # Download full transcript
     Invoke-WebRequest $sourceTxts[$i] -OutFile $rootDir/$processName-source-transcript-$i.txt
@@ -105,6 +100,7 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
 if (!($null -eq $sourceLanguageUrl)) {
     Invoke-WebRequest $sourceLanguageUrl -OutFile $rootDir/$processName-source-language.txt
     
+    Write-Host "Creating language model."
     $languageDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --language $rootDir/$processName-source-language.txt --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
     $languageModelId = & /usr/bin/SpeechCLI/speech model create --name $processName-Lang -lng $languageDataset -s $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 }
@@ -118,6 +114,7 @@ if ($null -eq $speechEndpoint) {
     }
 
     # Create baseline endpoint.
+    Write-Host "Creating baseline endpoint."
     $speechEndpoint = & /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l en-us -m $defaultScenarioId -lm $languageModelId --wait  | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
 }
 
@@ -174,7 +171,7 @@ $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-T
 
 # Create acoustic model with scenario "English conversational"
 Write-Host "Creating acoustic model."
-$model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale en-us --audio-dataset $trainDataset --scenario "c7a69da3-27de-4a4b-ab75-b6716f6321e5" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+$model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale en-us --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 
 # Create test
 & /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --wait
