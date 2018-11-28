@@ -46,6 +46,12 @@ $speechEndpoint = $env:speechEndpoint
 #$processName = ""
 $processName = $env:processName
 
+# Duration of cunks in seconds. Default = 10
+$chunkLength = $env:chunkLength
+
+# Percentage of the source chunks that will be used to test the model. Default = 10
+$testPercentage = $env:testPercentage
+
 #-----------------------------------------------------
 
 $rootDir = (Get-Item -Path ".\" -Verbose).FullName;
@@ -74,6 +80,10 @@ $sourceTxts += (Invoke-WebRequest $sourceTranscriptUrl | Select -ExpandProperty 
 # Download WAV files locally
 New-Item $rootDir/SourceWavs -ItemType Directory -Force
 
+if ($null -eq $chunkLength) {
+    $chunkLength = 10
+}
+
 # Inline syntax
 #$sourceWavs | % {$i = 0} { Invoke-WebRequest $_ -OutFile .\SourceWavs\$i.wav; $i++ }
 
@@ -84,7 +94,7 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
 
     # Run FFmpeg on source files - chunk & convert
     New-Item ./Chunks-$i -ItemType Directory -Force
-    ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time 10 -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
+    ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
 
     # Download full transcript
     Invoke-WebRequest $sourceTxts[$i] -OutFile $rootDir/$processName-source-transcript-$i.txt
@@ -161,7 +171,10 @@ $cleaned | Out-File "$rootDir/$processName-cleaned-transcript.txt"
 
 # Prepare ZIP and TXT for test and train datasets
 Write-Host "Compiling audio and transcript files."
-& /usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage 10
+if ($null -eq $testPercentage) {
+    $testPercentage = 10
+}
+& /usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage $testPercentage
 
 
 # Create acoustic datasets
