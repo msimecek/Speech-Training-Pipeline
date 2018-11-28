@@ -11,7 +11,7 @@ $sourceFileUrl = $env:sourceFileUrl
 #$sourceTranscriptUrl = "https://<url>/<file>.txt"
 $sourceTranscriptUrl = $env:sourceTranscriptUrl
 
-# TXT file with language model. Not used in this script.
+# TXT file with language model.
 #$sourceLanguageUrl = "https://<url>/<file>.txt"
 $sourceLanguageUrl = $env:sourceLanguageUrl
 
