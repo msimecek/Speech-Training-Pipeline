@@ -79,6 +79,29 @@ if ($null -eq $silenceThreshold) {
 }
 
 #-----------------------------------------------------
+# Display parameter settings
+
+Write-Host "Parameter Settings" -ForegroundColor Green
+Write-Host "------------------" -ForegroundColor Green
+Write-Host ("Source TXT File:  " + $sourceFileUrl) -ForegroundColor Magenta
+Write-Host ("Transcription TXT File:  " + $sourceTranscriptUrl) -ForegroundColor Magenta
+Write-Host ("Language Model - TXT File:  " + $sourceLanguageUrl) -ForegroundColor Magenta
+Write-Host ("Language Model - ID:  " + $languageModelId) -ForegroundColor Magenta
+Write-Host ("Speech - FFmpeg File:  " + $ffmpegUrl)  -ForegroundColor Magenta
+Write-Host ("Speech - CLI Tool:  " + $speechCliUrl)  -ForegroundColor Magenta
+Write-Host ("Speech - API Key:  " + $speechKey)  -ForegroundColor Magenta
+Write-Host ("Speech - API Region:  " + $speechRegion)  -ForegroundColor Magenta
+Write-Host ("Speech - endpoint:  " + $speechEndpoint)  -ForegroundColor Magenta
+Write-Host ("Speech - process name:  " + $processName)  -ForegroundColor Magenta
+Write-Host ("Speech - chunk length (seconds):  " + $chunkLength)  -ForegroundColor Magenta
+Write-Host ("Speech - test data (percentage):  " + $testPercentage)  -ForegroundColor Magenta
+Write-Host ("Silence - Remove (True/False):  " + $removeSilence)  -ForegroundColor Magenta
+Write-Host ("Silence - gap duration (seconds):  " + $silenceDuration) -ForegroundColor Magenta
+Write-Host ("Silence - sound threshold (dB):  " + $silenceThreshold) -ForegroundColor Magenta
+
+
+
+#-----------------------------------------------------
 
 $rootDir = (Get-Item -Path ".\" -Verbose).FullName;
 
