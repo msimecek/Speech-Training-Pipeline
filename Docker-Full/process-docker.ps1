@@ -46,11 +46,21 @@ $speechEndpoint = $env:speechEndpoint
 #$processName = ""
 $processName = $env:processName
 
-# Duration of cunks in seconds. Default = 10
+# Duration of chunks in seconds. Default = 10
 $chunkLength = $env:chunkLength
 
 # Percentage of the source chunks that will be used to test the model. Default = 10
 $testPercentage = $env:testPercentage
+
+# Remove Silence. 
+$removeSilence = $env:removeSilence
+
+# Silence Duration. Specify a duration of silence that must exist before audio is not copied any more. Default = 1 second
+$silenceDuration = $env:silenceDuration
+
+# The sample value that should be treated as silence. Default = 50 Decibels
+$silenceThreshold = $env:silenceThreshold
+
 
 #-----------------------------------------------------
 
@@ -84,6 +94,14 @@ if ($null -eq $chunkLength) {
     $chunkLength = 10
 }
 
+if ($null -eq $silenceDuration) {
+    $silenceDuration = 1
+}
+
+if ($null -eq $silenceThreshold) {
+    $silenceThreshold = 50
+}
+
 # Inline syntax
 #$sourceWavs | % {$i = 0} { Invoke-WebRequest $_ -OutFile .\SourceWavs\$i.wav; $i++ }
 
@@ -93,9 +111,15 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     Invoke-WebRequest $sourceWavs[$i] -OutFile ./SourceWavs/$i.wav
 
     # Run FFmpeg on source files - chunk & convert
-    New-Item ./Chunks-$i -ItemType Directory -Force
-    ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
-
+    if ($null -eq $removeSilence)
+    {
+        New-Item ./Chunks-$i -ItemType Directory -Force
+        ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
+    }
+    else {
+        New-Item ./Chunks-$i -ItemType Directory -Force
+        ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000  -af silenceremove=stop_periods=-1:stop_duration=$($silenceDuration):stop_threshold=-$($silenceThreshold)dB -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
+    }
     # Download full transcript
     Invoke-WebRequest $sourceTxts[$i] -OutFile $rootDir/$processName-source-transcript-$i.txt
 
