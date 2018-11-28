@@ -117,12 +117,13 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     New-Item ./Chunks-$i -ItemType Directory -Force
 
     # Run FFmpeg on source files - chunk & convert
-    if ($null -eq $removeSilence)
+    if (!($null -eq $removeSilence))
     {
         $audioFilters = "-af silenceremove=stop_periods=-1:stop_duration=$($silenceDuration):stop_threshold=-$($silenceThreshold)dB"
     }
     
-    ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000 $audioFilters -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav
+    $command = "ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000 $audioFilters -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav"
+    Invoke-Expression -Command $command
     
     # Download full transcript
     Invoke-WebRequest $sourceTxts[$i] -OutFile $rootDir/$processName-source-transcript-$i.txt
