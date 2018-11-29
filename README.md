@@ -54,15 +54,21 @@ The process itself is a PowerShell script and runs on Windows, Mac and Linux (th
 
 It is configured with environmental variables.
 
-| Name                  | Expected type | Description                                                  | Example                                                      |
-| --------------------- | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| `processName`         | string        | Custom name - for better orientation, will be used by different parts of the process. Should not contain spaces and special characters. | MyPipeline                                                   |
-| `languageModelId`     | GUID string   | ID of a pre-trained language model.                          | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1                         |
-| `sourceFileUrl`       | URL string    | TXT file containing a list of source WAV file URLs. One file per line. | https://sample.blob.core.windows.net/test/sourceWav.txt      |
-| `sourceTranscriptUrl` | URL string    | TXT file containing a list of transcript TXT files. One file per line. Order matters (should correspond with WAV files. | https://sample.blob.core.windows.net/test/sourceTranscript.txt |
-| `speechEndpoint`      | GUID string   | ID of a baseline endpoint from the Speech service. Can be baseline, with the default model. | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1                         |
-| `speechKey`           | string        | Speech service subscription key.                             | acc1cabbbbeb4aaa8311477b05ab2236                             |
-| `speechRegion`        | string        | Speech service region.                                       | northeurope                                                  |
+| Name |  Expected type   | Description | Example |
+|----------|-------------|------|------|
+|`processName`| string | Custom name - for better orientation, will be used by different parts of the process. Should not contain spaces and special characters. | Iteration1|
+|`sourceFileUrl`| URL string | TXT file containing a list of source WAV file URLs. One file per line.| https://sample.net/test/sourceWav.txt |
+|`sourceTranscriptUrl`| URL string | TXT file containing a list of transcript TXT files. One file per line. Order matters (should correspond with WAV files.| https://sample.net/test/sourceTranscript.txt |
+|`sourceLanguageUrl`| URL string | TXT file with the language dataset. | https://sample.net/test/language.txt |
+|`languageModelId`| GUID string | ID of a pre-trained language model. If `sourceLanguageUrl` is provided, this **will be overwritten**! |  cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1 |
+|`speechEndpoint`| GUID string | (Optional) ID of a baseline endpoint from the Speech service. If not provided, new endpoint will be created. | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1|
+|`speechKey`| string | Speech service subscription key.| acc1cabbbbeb4aaa8311477b05ab2236|
+|`speechRegion`| string | Speech service region.| northeurope|
+|`chunkLength`| int | (Optional) Duration of the samples (in seconds) that will be created from source files. Default = 10. | 10|
+|`testPercentage`| int | (Optional) How many percent of samples will be used for testing. Default = 10. | 10|
+|`removeSilence`| string | (Optional) If specified, the process will try to remove silence from original audio. Default = $null | "true"|
+|`silenceDuration`| int | (Optional) Duration of silence (in seconds) that must exist before audio is not copied any more. Default = 1 | 1 |
+|`silenceThreshold`| int | (Optional) Sample value that should be treated as silence (in dB). Default = 50 decibels.| 50|
 
 There are currently three ways of running the process.
 
@@ -73,7 +79,7 @@ Most convenient. Use Docker locally or Azure Container Instances for example.
 *Locally:*
 
 ```
-docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e sourceFileUrl='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e sourceTranscriptUrl='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e speechEndpoint='<GUID>' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.9-full 
+docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e sourceFileUrl='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e sourceTranscriptUrl='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e sourceLanguageUrl='https://pokus.blob.core.windows.net/speech/language.txt' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.13-full 
 ```
 
 *Azure Container Instances:*
@@ -81,15 +87,17 @@ docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e source
 ```
 az group create -n SpeechPipeline -l northeurope
 
-az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.9-full --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "sourceFileUrl"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "sourceTranscriptUrl"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "speechEndpoint"="<GUID>" "speechKey"="<KEY>" "speechRegion"="<REGION>"
+az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.13-full --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "sourceFileUrl"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "sourceTranscriptUrl"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "sourceLanguageUrl"="https://pokus.blob.core.windows.net/speech/language.txt" "speechKey"="<KEY>" "speechRegion"="<REGION>"
 
 az container attach -n speechjob -g SpeechPipeline
 ```
 
 There are two images available: **-light** and **-full**.
 
-* Light image contains only low-level libraries and downloads some dependencies while running. This image is smaller, but the whole process takes longer.
-* Full image contains all dependencies. It's larger in size, but takes shorter to run.
+* `light` image contains only low-level libraries and downloads some dependencies while running. This image is smaller, but the whole process takes longer.
+* `full` image contains all dependencies. It's larger in size, but takes shorter to run. Also equals to `latest`.
+
+> If you're not constrained by image size, use **full/latest** image.
 
 #### PowerShell
 
