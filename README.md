@@ -57,9 +57,9 @@ It is configured with environmental variables.
 | Name |  Expected type   | Description | Example |
 |----------|-------------|------|------|
 |`processName`| string | Custom name - for better orientation, will be used by different parts of the process. Should not contain spaces and special characters. | Iteration1|
-|`sourceFileUrl`| URL string | TXT file containing a list of source WAV file URLs. One file per line.| https://sample.net/test/sourceWav.txt |
-|`sourceTranscriptUrl`| URL string | TXT file containing a list of transcript TXT files. One file per line. Order matters (should correspond with WAV files.| https://sample.net/test/sourceTranscript.txt |
-|`sourceLanguageUrl`| URL string | TXT file with the language dataset. | https://sample.net/test/language.txt |
+|`audioFilesList`| URL string | TXT file containing a list of source WAV file URLs. One file per line.| https://sample.net/test/sourceWav.txt |
+|`transcriptFilesList`| URL string | TXT file containing a list of transcript TXT files. One file per line. Order matters (should correspond with WAV files.| https://sample.net/test/sourceTranscript.txt |
+|`languageModelFile`| URL string | TXT file with the language dataset. | https://sample.net/test/language.txt |
 |`languageModelId`| GUID string | ID of a pre-trained language model. If `sourceLanguageUrl` is provided, this **will be overwritten**! |  cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1 |
 |`speechEndpoint`| GUID string | (Optional) ID of a baseline endpoint from the Speech service. If not provided, new endpoint will be created. | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1|
 |`speechKey`| string | Speech service subscription key.| acc1cabbbbeb4aaa8311477b05ab2236|
@@ -79,7 +79,7 @@ Most convenient. Use Docker locally or Azure Container Instances for example.
 *Locally:*
 
 ```
-docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e sourceFileUrl='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e sourceTranscriptUrl='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e sourceLanguageUrl='https://pokus.blob.core.windows.net/speech/language.txt' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.13-full 
+docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e audioFilesList='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e transcriptFilesList='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e languageModelFile='https://pokus.blob.core.windows.net/speech/language.txt' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.14-full 
 ```
 
 *Azure Container Instances:*
@@ -87,7 +87,7 @@ docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e source
 ```
 az group create -n SpeechPipeline -l northeurope
 
-az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.13-full --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "sourceFileUrl"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "sourceTranscriptUrl"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "sourceLanguageUrl"="https://pokus.blob.core.windows.net/speech/language.txt" "speechKey"="<KEY>" "speechRegion"="<REGION>"
+az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.14-full --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "audioFilesList"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "transcriptFilesList"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "languageModelFile"="https://pokus.blob.core.windows.net/speech/language.txt" "speechKey"="<KEY>" "speechRegion"="<REGION>"
 
 az container attach -n speechjob -g SpeechPipeline
 ```

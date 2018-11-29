@@ -4,28 +4,20 @@
 #
 
 # TXT file with links to source WAV files. One line = one file.
-#$sourceFileUrl = "https://<url>/<file>.txt"
-$sourceFileUrl = $env:sourceFileUrl
+#$audioFilesList = "https://<url>/<file>.txt"
+$audioFilesList = $env:audioFilesList
 
 # TXT file with links to transcription files corresponding to WAV files. One file = complete trascript of the whole WAV file (no timestamps, only text).
-#$sourceTranscriptUrl = "https://<url>/<file>.txt"
-$sourceTranscriptUrl = $env:sourceTranscriptUrl
+#$transcriptFilesList = "https://<url>/<file>.txt"
+$transcriptFilesList = $env:transcriptFilesList
 
 # TXT file with language model.
-#$sourceLanguageUrl = "https://<url>/<file>.txt"
-$sourceLanguageUrl = $env:sourceLanguageUrl
+#$languageModelFile = "https://<url>/<file>.txt"
+$languageModelFile = $env:languageModelFile
 
 # ID of an already existing language model.
-# If $sourceLanguageUrl is provided, this will be overwritten.
+# If $languageModelFile is provided, this will be overwritten.
 $languageModelId = $env:languageModelId
-
-# ZIP file containing FFmpeg tool (expects ffmpeg.exe in root).
-#$ffmpegUrl = "https://<url>/ffmpeg.zip"
-$ffmpegUrl = $env:ffmpegUrl
-
-# ZIP file containing Speech Service CLI tool
-#$speechCliUrl = "https://<url>.blob.core.windows.net/win-x64-280.zip"
-$speechCliUrl = $env:speechCliUrl
 
 # Key to Speech API (get from Azure portal or from Speech, aka CRIS, portal).
 #$speechKey = ""
@@ -46,19 +38,19 @@ $speechEndpoint = $env:speechEndpoint
 #$processName = ""
 $processName = $env:processName
 
-# Duration of chunks in seconds. Default = 10
+# (Optional) Duration of chunks in seconds. Default = 10
 $chunkLength = $env:chunkLength
 
-# Percentage of the source chunks that will be used to test the model. Default = 10
+# (Optional) Percentage of the source chunks that will be used to test the model. Default = 10
 $testPercentage = $env:testPercentage
 
-# Remove Silence. 
+# (Optional) If set, the process will remove silence in source audio files. Default = $null 
 $removeSilence = $env:removeSilence
 
-# Silence Duration. Specify a duration of silence that must exist before audio is not copied any more. Default = 1 second
+# (Optional) Silence Duration in seconds. Specify a duration of silence that must exist before audio is not copied any more. Default = 1
 $silenceDuration = $env:silenceDuration
 
-# The sample value that should be treated as silence. Default = 50 Decibels
+# The sample value (in dB) that should be treated as silence. Default = 50 decibels
 $silenceThreshold = $env:silenceThreshold
 
 
@@ -109,8 +101,8 @@ $sourceTxts = @()
 
 Set-SegmentStart -VarName "sourceDownload" # measurements
 
-$sourceWavs += (Invoke-WebRequest $sourceFileUrl | Select -ExpandProperty Content) -Split '\n' | ? {$_}
-$sourceTxts += (Invoke-WebRequest $sourceTranscriptUrl | Select -ExpandProperty Content) -Split '\n' | ? {$_}
+$sourceWavs += (Invoke-WebRequest $audioFilesList | Select -ExpandProperty Content) -Split '\n' | ? {$_}
+$sourceTxts += (Invoke-WebRequest $transcriptFilesList | Select -ExpandProperty Content) -Split '\n' | ? {$_}
 
 # Download WAV files locally
 New-Item $rootDir/SourceWavs -ItemType Directory -Force
@@ -152,9 +144,9 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
 Write-SegmentDuration -VarName "sourceDownload" -TextTemplate "[Measurement][SourceDownload] {0}s"
 
 # If language data provided, create language model.
-if (!($null -eq $sourceLanguageUrl)) {
+if (!($null -eq $languageModelFile)) {
     Set-SegmentStart
-    Invoke-WebRequest $sourceLanguageUrl -OutFile $rootDir/$processName-source-language.txt
+    Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
     
     Write-Host "Creating language model."
     $languageDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --language $rootDir/$processName-source-language.txt --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
@@ -169,7 +161,7 @@ if (!($null -eq $sourceLanguageUrl)) {
 if ($null -eq $speechEndpoint) {
     Set-SegmentStart
     # Is there a language model present? If not, use the baseline model.
-    if ($null -eq $sourceLanguageUrl -and $null -eq $languageModelId) {
+    if ($null -eq $languageModelFile -and $null -eq $languageModelId) {
         $languageModelId = $defaultScenarioId
     }
 
