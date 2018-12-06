@@ -60,7 +60,7 @@ It is configured with environmental variables.
 |`audioFilesList`| URL string | TXT file containing a list of source WAV file URLs. One file per line.| https://sample.net/test/sourceWav.txt |
 |`transcriptFilesList`| URL string | TXT file containing a list of transcript TXT files. One file per line. Order matters (should correspond with WAV files.| https://sample.net/test/sourceTranscript.txt |
 |`languageModelFile`| URL string | TXT file with the language dataset. | https://sample.net/test/language.txt |
-|`languageModelId`| GUID string | ID of a pre-trained language model. If `sourceLanguageUrl` is provided, this **will be overwritten**! |  cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1 |
+|`languageModelId`| GUID string | ID of a pre-trained language model. If `languageModelFile` is provided, this **will be overwritten**! |  cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1 |
 |`speechEndpoint`| GUID string | (Optional) ID of a baseline endpoint from the Speech service. If not provided, new endpoint will be created. | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1|
 |`speechKey`| string | Speech service subscription key.| acc1cabbbbeb4aaa8311477b05ab2236|
 |`speechRegion`| string | Speech service region.| northeurope|
