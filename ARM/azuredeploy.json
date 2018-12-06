@@ -87,7 +87,17 @@
       "type": "string",
       "metadata": {
         "description": "Speech service region."
-      }
+      },
+      "allowedValues": [
+        "westus",
+        "westus2",
+        "eastus",
+        "eastus2",
+        "eastasia",
+        "southeastasia",
+        "northeurope",
+        "westeurope"
+      ]
     },
     "chunkLength": {
       "type": "int",
