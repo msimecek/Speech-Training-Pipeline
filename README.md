@@ -2,11 +2,11 @@
 
 We've built this pipeline to simplify the process of preparing and training a speech to text (STT) models for the [Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/overview), which is part of [Microsoft Azure](https://azure.microsoft.com/en-us/).
 
+The goal is to simplify data preparation and lower the barrier of entry overall. With this pipeline developers have to provide only full audio files and full transcripts, along with Speech Service keys, and wait for custom speech model to be created. Additional improvements in quality can be achieved by running multiple iterations.
 
+![Developer's view](_images/pipeline-developer-view.png)
 
-TBD: diagram: multiple wavs + multiple txts = custom speech model
-
-
+![Background view of the speech processing pipeline](_images/pipeline-background-view.png)
 
 ## Usage
 
@@ -17,16 +17,24 @@ To use this pipeline and get a trained speech endpoint in the end, you have to:
 
  ### 1. Data preparation
 
+> **Important:** Keep on mind that all TXT files should be encoded as UTF-8 BOM and should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/). These are typically `–`, `‘`, `‚`, `“` etc.
+>
+> We're planning to add validations/converters into the process itself.
+
 **Prepare source audio/video recordings.** We usually use WAVs, but technically they can be any audio/video files as long as *ffmpeg* is able to process them. You can use multiple files and each of them can be hours long. We recommend total length no less than 4-5 hours.
 
 **Prepare source transcripts as TXT files.** Each audio/video recording should have a corresponding transcript file. This text file contains everything that is said on the recording in a raw format (no timestamps, no special marks). If multiple recordings repeat the same text, only one TXT is needed.
+
+**Prepare language dataset as TXT file.** Language datasets are easy to prepare and improve recognition significantly, that's why we require you to provide a language datasets for this pipeline. Language data structure is [described in the Docs](https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/how-to-customize-language-model#prepare-the-data).
+
+> We're currently testing a script which would generate the language dataset automatically, based on transcript files.
 
 **Upload your files to a location accessible from the internet (URL, to be precise).** We recommend Azure Blob Storage, because it supports *SAS URLs*, which means that your files don't have to be public in order to use them.
 
 **Prepare lists of your source files.** These are two TXT files:
 
-* list of URLs pointing to source audio/video recordings,
-* list of URLs pointing to source transcript TXTs.
+* list of URLs of source audio/video recordings,
+* list of URLs of source transcript TXTs.
 
 *sample-wavs.txt*
 
@@ -50,7 +58,7 @@ https://pokus.blob.core.windows.net/speech/03.txt
 
 ### 2. Running the process
 
-The process itself is a PowerShell script and runs on Windows, Mac and Linux (thanks to PowerShell Core).
+The process itself is a PowerShell script and runs on Windows, Mac or Linux (thanks to PowerShell Core).
 
 It is configured with environmental variables.
 
@@ -74,7 +82,7 @@ There are currently three ways of running the process.
 
 #### Docker
 
-Most convenient. Use Docker locally or Azure Container Instances for example.
+Most convenient. Use Docker locally or [Azure Container Instances](https://azure.microsoft.com/en-us/services/container-instances/).
 
 *Locally:*
 
@@ -105,12 +113,18 @@ Since it's still a PowerShell script, you can run it manually, but make sure to 
 
 * python 3.7 + pip
 * nodejs + npm
+* git
 * PowerShell Core (for non-Windows systems)
 
 #### Azure DevOps
 
-First iteration of this pipeline was actually run in Azure DevOps and although it's super cool, Docker is more convenient option. But it works - you just have to connect your own build machine (because the process takes a looong time) and provide environmental variables as Pipeline variables in Azure DevOps. Then simply start the PowerShell script as one of the build steps.
+First iteration of this pipeline was actually ran in Azure DevOps and although it's super cool, Docker is more convenient option. But it works - you just have to connect your own build machine (because the process takes a looong time) and provide environmental variables as Pipeline variables in Azure DevOps. Then simply start the PowerShell script as one of the build steps.
 
-## How it works
+## References
 
-TBD - comprehensive description
+This pipeline references two other repos:
+
+* [Custom Speech Processing Pipeline](https://github.com/shanepeckham/CustomSpeech-Processing-Pipeline)
+* [Azure Speech CLI](https://github.com/msimecek/Azure-Speech-CLI)
+
+To learn how work with the trained endpoint, look at [Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/) in Microsoft documentation. There are SDKs and samples for UWP, C#, C++, Java, JavaScript etc.

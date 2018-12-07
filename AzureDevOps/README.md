@@ -2,9 +2,7 @@
 
 A set of scripts to run and orchestrate our speech processing pipeline.
 
-More scripts may be added as we see the need, but currently there are only two:
-
-* process.ps1
+**Most of our investment pivoted into the Docker version, so this one is outdated.**
 
 ## Usage
 
