@@ -31,11 +31,19 @@
             "northeurope",
             "westeurope"
         ]
+      },
+      "logAnalytics": {
+          "type": "bool",
+          "defaultValue": true,
+          "metadata": {
+            "description": "Creates a Log Analytics workspace to store container logs from the pipeline."   
+          }
       }
     },
     "variables": {
       "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'sa')]",
-      "speechServiceId": "[concat(resourceGroup().id,'/providers/','Microsoft.CognitiveServices/accounts/', parameters('speechServiceName'))]"
+      "speechServiceId": "[concat(resourceGroup().id,'/providers/','Microsoft.CognitiveServices/accounts/', parameters('speechServiceName'))]",
+      "logAnalyticsName": "[concat(uniquestring(resourceGroup().id), 'logs')]"
     },
     "resources": [
       {
@@ -60,7 +68,21 @@
         "location": "[parameters('location')]",
         "properties": {},
         "dependsOn": []
-      }
+      },
+      {
+        "condition": "[bool(parameters('logAnalytics')]",
+        "type": "microsoft.operationalinsights/workspaces",
+        "name": "[variables('logAnalyticsName')]",
+        "apiVersion": "2015-11-01-preview",
+        "location": "westeurope",
+        "scale": null,
+        "properties": {
+            "sku": {
+                "name": "free"
+            }
+        },
+        "dependsOn": [ ]
+    }
     ],
     "outputs": {
       "storageAccountName": {

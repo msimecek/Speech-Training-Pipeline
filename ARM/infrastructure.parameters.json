@@ -11,6 +11,9 @@
       },
       "location": {
           "value": ""
+      },
+      "logAnalytics": {
+          "value": true
       }
   }
 }
