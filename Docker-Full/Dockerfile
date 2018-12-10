@@ -34,6 +34,7 @@ RUN npm --prefix /usr/src/repos/CustomSpeech-Processing-Pipeline/Batcher install
 COPY SpeechCLI /usr/bin/SpeechCLI
 COPY process-docker.ps1 /usr/src/process-docker.ps1
 COPY start.ps1 /usr/src/start.ps1
+COPY helpers.ps1 /usr/src/helpers.ps1
 
 CMD [ "pwsh", "/usr/src/start.ps1" ]
 #CMD [ "pwsh" ]
