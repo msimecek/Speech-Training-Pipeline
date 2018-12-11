@@ -25,5 +25,5 @@ function Write-SegmentDuration {
         Throw "Segment $Name was not started."
     }
 
-    "[Measurement][{0}] {1}s" -f $Name, ($end - $start)
+    "[Measurement][{0}][{1}] {2}s" -f $env:processName, $Name, ($end - $start)
 }
