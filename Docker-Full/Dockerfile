@@ -1,12 +1,9 @@
 FROM ubuntu:16.04
 WORKDIR /usr/src
 
-RUN apt-get update
-RUN apt-get install
-
 RUN  apt-get update \ 
         && apt-get install \
-        && apt-get --assume-yes install \
+        && apt-get -y install \
                 curl \
                 python3 \
                 python3-pip \
