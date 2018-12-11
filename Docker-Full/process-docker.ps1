@@ -70,6 +70,10 @@ if ($null -eq $silenceThreshold) {
     $silenceThreshold = 50
 }
 
+if ($null -eq $testPercentage) {
+    $testPercentage = 10
+}
+
 #-----------------------------------------------------
 
 . ../helpers.ps1 # include
@@ -226,29 +230,38 @@ Write-SegmentDuration -VarName "transcriber" -TextTemplate "[Measurement][Transc
 # Prepare ZIP and TXT for test and train datasets
 Write-Host "Compiling audio and transcript files."
 Set-SegmentStart
-if ($null -eq $testPercentage) {
-    $testPercentage = 10
+
+if ($cleaned.Length * ($testPercentage / 100) -lt 1) {
+    Write-Host "Not enough files to populate the test dataset. Only training dataset will be created."
+    $testPercentage = 0
 }
+
 & /usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage $testPercentage
 Write-SegmentDuration -TextTemplate "[Measurement][SpeechCompile] {0}s"
 
-# Create acoustic datasets
-Write-Host "Creating acoustic datasets for training and testing."
+# Create acoustic datasets for training
+Write-Host "Creating acoustic datasets for training."
 Set-SegmentStart
 $trainDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
-$testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
-Write-SegmentDuration -TextTemplate "[Measurement][AccousticDatasets] {0}s"
+Write-SegmentDuration -TextTemplate "[Measurement][AccousticDatasetTrain] {0}s"
 
 # Create acoustic model with scenario "English conversational"
 Write-Host "Creating acoustic model."
 Set-SegmentStart
 $model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale en-us --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
-Write-SegmentDuration -TextTemplate "[Measurement][AcousticModel] {0}s"
+Write-SegmentDuration -TextTemplate "[Measurement][AcousticModelTrain] {0}s"
 
-# Create test
-Set-SegmentStart
-& /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --wait
-Write-SegmentDuration -TextTemplate "[Measurement][Test] {0}s"
+if ($testPercentage -gt 0) {
+    # Create test acoustic datasets for testing.
+    Set-SegmentStart
+    $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+    Write-SegmentDuration -TextTemplate "[Measurement][AcousticModelTest] {0}s"
+
+    # Create test for the model.
+    Set-SegmentStart
+    & /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --wait
+    Write-SegmentDuration -TextTemplate "[Measurement][Test] {0}s"
+}
 
 # Create endpoint
 Set-SegmentStart
