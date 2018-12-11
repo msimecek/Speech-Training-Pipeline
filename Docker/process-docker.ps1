@@ -38,8 +38,14 @@ $speechEndpoint = $env:speechEndpoint
 #$processName = ""
 $processName = $env:processName
 
-# (Optional) ID of the baseline model which should be used. Default is en-us "V2.5 Conversational (AM/LM adapt)"
+# (Optional) ID of the baseline model which should be used. Default is en-us "V2.5 Conversational (AM/LM adapt)".
+# If provided, locale must match scenario language.
 $defaultScenarioId = $env:defaultScenarioId
+
+# (Optional) Language of models and datasets. Must be supported by the Speech service. Default: en-us
+# If $defaultScenarioId is not provided, this will be set to en-us.
+# So far the only tested locale is en-us.
+$locale = $env:locale
 
 # (Optional) Duration of chunks in seconds. Default = 10
 $chunkLength = $env:chunkLength
@@ -53,9 +59,8 @@ $removeSilence = $env:removeSilence
 # (Optional) Silence Duration in seconds. Specify a duration of silence that must exist before audio is not copied any more. Default = 1
 $silenceDuration = $env:silenceDuration
 
-# The sample value (in dB) that should be treated as silence. Default = 50 decibels
+# (Optional) The sample value (in dB) that should be treated as silence. Default = 50 decibels
 $silenceThreshold = $env:silenceThreshold
-
 
 #-----------------------------------------------------
 
@@ -63,6 +68,11 @@ $silenceThreshold = $env:silenceThreshold
 
 if ($null -eq $defaultScenarioId) {
     $defaultScenarioId = "c7a69da3-27de-4a4b-ab75-b6716f6321e5" # "V2.5 Conversational (AM/LM adapt) - en-us"
+    $locale = "en-us"
+}
+
+if ($null -eq $locale) {
+    $locale = "en-us"
 }
 
 if ($null -eq $chunkLength) {
@@ -166,8 +176,8 @@ if (!($null -eq $languageModelFile)) {
     Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
     
     Write-Host "Creating language model."
-    $languageDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --language $rootDir/$processName-source-language.txt --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
-    $languageModelId = & /usr/bin/SpeechCLI/speech model create --name $processName-Lang -lng $languageDataset -s $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+    $languageDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --locale $locale --language $rootDir/$processName-source-language.txt --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
+    $languageModelId = & /usr/bin/SpeechCLI/speech model create --name $processName-Lang --locale $locale -lng $languageDataset -s $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 
     Write-SegmentDuration -Name "CreateLanguageModel"
 }
@@ -184,7 +194,7 @@ if ($null -eq $speechEndpoint) {
 
     # Create baseline endpoint.
     Write-Host "Creating baseline endpoint."
-    $speechEndpoint = & /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l en-us -m $defaultScenarioId -lm $languageModelId --wait  | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
+    $speechEndpoint = & /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l $locale -m $defaultScenarioId -lm $languageModelId --wait  | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
     Write-SegmentDuration -Name "CreateBaselineEndpoint"
 }
 
@@ -252,19 +262,19 @@ Write-SegmentDuration -Name "SpeechCompile"
 # Create acoustic datasets for training
 Write-Host "Creating acoustic datasets for training."
 Set-SegmentStart -Name "AccousticDatasetTrain"
-$trainDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+$trainDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName --locale $locale --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 Write-SegmentDuration -Name "AccousticDatasetTrain"
 
 # Create acoustic model with scenario "English conversational"
 Write-Host "Creating acoustic model."
 Set-SegmentStart -Name "AcousticModelTrain"
-$model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale en-us --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+$model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale $locale --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 Write-SegmentDuration -Name "AcousticModelTrain"
 
 if ($testPercentage -gt 0) {
     # Create test acoustic datasets for testing.
     Set-SegmentStart -Name "AcousticModelTest"
-    $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+    $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --locale $locale --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
     Write-SegmentDuration -Name "AcousticModelTest"
 
     # Create test for the model.
@@ -275,7 +285,7 @@ if ($testPercentage -gt 0) {
 
 # Create endpoint
 Set-SegmentStart -Name "Endpoint"
-& /usr/bin/SpeechCLI/speech endpoint create --name $processName --model $model --language-model $languageModelId --wait
+& /usr/bin/SpeechCLI/speech endpoint create --name $processName --locale $locale --model $model --language-model $languageModelId --wait
 Write-SegmentDuration -Name "Endpoint"
 
 Write-Host "Process done."
