@@ -78,8 +78,8 @@ if ($null -eq $testPercentage) {
 
 . ../helpers.ps1 # include
 
-Set-SegmentStart -VarName "mainprocess" # measurements
-Set-SegmentStart -VarName "toolsinit"
+Set-SegmentStart -Name "MainProcess" # measurements
+Set-SegmentStart -Name "ToolsInit"
 
 $rootDir = (Get-Item -Path ".\" -Verbose).FullName;
 
@@ -96,14 +96,14 @@ node --version
 $idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
 $defaultScenarioId = "c7a69da3-27de-4a4b-ab75-b6716f6321e5" # ID of the baseline model which should be used by default, this represents en-us "V2.5 Conversational (AM/LM adapt)"
 
-Write-SegmentDuration -VarName "toolsinit" -TextTemplate "[Measurement][ToolsPrep] {0}s"
+Write-SegmentDuration -Name "ToolsInit"
 
 # Parse source files into arrays and remove empty lines. Each line is expected to be a file URL.
 Write-Host "Downloading source files."
 $sourceWavs = @()
 $sourceTxts = @()
 
-Set-SegmentStart -VarName "sourceDownload" # measurements
+Set-SegmentStart -Name "SourceDownload"
 
 $sourceWavs += (Invoke-WebRequest $audioFilesList | Select -ExpandProperty Content) -Split '\n' | ? {$_}
 $sourceTxts += (Invoke-WebRequest $transcriptFilesList | Select -ExpandProperty Content) -Split '\n' | ? {$_}
@@ -118,9 +118,9 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     # Download WAV file locally to prevent Storage transfer errors    
     Write-Host "($($i + 1)/$($sourceWavs.Count)) Downloading source WAV locally."
     
-    Set-SegmentStart -VarName "fileDownload"
+    Set-SegmentStart -Name "FileDownload-$i.wav"
     Invoke-WebRequest $sourceWavs[$i] -OutFile ./SourceWavs/$i.wav
-    Write-SegmentDuration -VarName "fileDownload" -TextTemplate "[Measurement][FileDownload-$i.wav] {0}s"
+    Write-SegmentDuration -Name "FileDownload-$i.wav"
 
     New-Item ./Chunks-$i -ItemType Directory -Force
 
@@ -131,9 +131,9 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     }
     
     $command = "ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000 $audioFilters -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav"
-    Set-SegmentStart -VarName "ffmpeg"
+    Set-SegmentStart -Name "ffmpeg-$i.wav"
     Invoke-Expression -Command $command
-    Write-SegmentDuration -VarName "ffmpeg" -TextTemplate "[Measurement][ffmpeg-$i.wav] {0}s"
+    Write-SegmentDuration -Name "ffmpeg-$i.wav"
         
     # Download full transcript
     Invoke-WebRequest $sourceTxts[$i] -OutFile $rootDir/$processName-source-transcript-$i.txt
@@ -148,25 +148,25 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     (Get-Content "$rootDir/$processName-source-transcript-$i.txt") -Replace "\u2019","'" -Replace "\u201A","," -Replace "\u2013","-" -Replace "\u2012","-" -Replace "\u201C",'"' -Replace "\u201D",'"' | Out-File "$rootDir/$processName-source-transcript-$i.txt"
 }
 
-Write-SegmentDuration -VarName "sourceDownload" -TextTemplate "[Measurement][SourceDownload] {0}s"
+Write-SegmentDuration -Name "SourceDownload"
 
 # If language data provided, create language model.
 if (!($null -eq $languageModelFile)) {
-    Set-SegmentStart
+    Set-SegmentStart -Name "CreateLanguageModel"
     Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
     
     Write-Host "Creating language model."
     $languageDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --language $rootDir/$processName-source-language.txt --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
     $languageModelId = & /usr/bin/SpeechCLI/speech model create --name $processName-Lang -lng $languageDataset -s $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 
-    Write-SegmentDuration -TextTemplate "[Measurement][CreateLanguageModel] {0}s"
+    Write-SegmentDuration -Name "CreateLanguageModel"
 }
 
 
 # If baseline endpoint not provided, create one with baseline models first.
 # TODO: make dynamic, based on locale
 if ($null -eq $speechEndpoint) {
-    Set-SegmentStart
+    Set-SegmentStart -Name "CreateBaselineEndpoint"
     # Is there a language model present? If not, use the baseline model.
     if ($null -eq $languageModelFile -and $null -eq $languageModelId) {
         $languageModelId = $defaultScenarioId
@@ -175,20 +175,20 @@ if ($null -eq $speechEndpoint) {
     # Create baseline endpoint.
     Write-Host "Creating baseline endpoint."
     $speechEndpoint = & /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l en-us -m $defaultScenarioId -lm $languageModelId --wait  | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
-    Write-SegmentDuration -TextTemplate "[Measurement][CreateBaselineEndpoint] {0}s"
+    Write-SegmentDuration -Name "CreateBaselineEndpoint"
 }
 
 # Run Batcher, if there's no machine-transcript present
 # - machine transcript creation is time consuming, this allows to skip it if the process needs to be run again
 cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher
 
-Set-SegmentStart
+Set-SegmentStart -Name "Batcher"
 for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     If (!(Test-Path "$rootDir/$processName-machine-transcript-$i.txt")) {
        node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/Chunks-$i" --output "$rootDir/$processName-machine-transcript-$i.txt"
     }
 }
-Write-SegmentDuration -TextTemplate "[Measurement][Batcher] {0}s"
+Write-SegmentDuration -Name "Batcher"
 
 # Run Transcriber
 cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Transcriber
@@ -196,22 +196,22 @@ cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Transcriber
 New-Item $rootDir/$processName-Cleaned -ItemType Directory -Force
 New-Item $rootDir/$processName-Compiled -ItemType Directory -Force
 
-Set-SegmentStart -VarName "transcriber"
+Set-SegmentStart -Name "Transcriber"
 $cleaned = @()
 for ($i = 0; $i -lt $sourceWavs.Count; $i++) 
 {
     # TODO: exclude from loop, when machine transcript empty
-    Set-SegmentStart
+    Set-SegmentStart -Name "TranscriberFile-$i"
 
     # python transcriber.py -t '11_WTA_ROM_STEPvGARC_2018/11_WTA_ROM_STEPvGARC_2018.txt' -a '11_WTA_ROM_STEPvGARC_2018/11_WTA_ROM_STEPvGARC_OFFSET.txt' -g '11_WTA_ROM_STEPvGARC_TRANSCRIPT_testfunc2.txt'
     # -t = TRANSCRIBED_FILE = official full transcript
     # -a = audio processed file = output from batcher
     # -g = output file
     python3 transcriber.py -t "$rootDir/$processName-source-transcript-$i.txt" -a "$rootDir/$processName-machine-transcript-$i.txt" -g "$rootDir/$processName-matched-transcript-$i.txt"
-    Write-SegmentDuration -TextTemplate "[Measurement][TranscriberFile-$i] {0}s"
+    Write-SegmentDuration -Name "TranscriberFile-$i"
 
     # Cleanup (remove NEEDS MANUAL CHECK and files which don't have transcript)
-    Set-SegmentStart
+    Set-SegmentStart -Name "CleanupFile-$i"
     $present = Get-Content -Path "$rootDir/$processName-matched-transcript-$i.txt" | Where-Object {$_ -notlike "*NEEDS MANUAL CHECK*"}
     
     ForEach ($line in $present) {
@@ -220,16 +220,16 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++)
     }
 
     $cleaned += $present
-    Write-SegmentDuration -TextTemplate "[Measurement][CleanupFile-$i] {0}s"
+    Write-SegmentDuration -Name "CleanupFile-$i"
 }
 
 Write-Host "Transcribe done. Writing cleaned-transcript.txt"
 $cleaned | Out-File "$rootDir/$processName-cleaned-transcript.txt"
-Write-SegmentDuration -VarName "transcriber" -TextTemplate "[Measurement][Transcriber] {0}s"
+Write-SegmentDuration -Name "Transcriber"
 
 # Prepare ZIP and TXT for test and train datasets
 Write-Host "Compiling audio and transcript files."
-Set-SegmentStart
+Set-SegmentStart -Name "SpeechCompile"
 
 if ($cleaned.Length * ($testPercentage / 100) -lt 1) {
     Write-Host "Not enough files to populate the test dataset. Only training dataset will be created."
@@ -237,36 +237,36 @@ if ($cleaned.Length * ($testPercentage / 100) -lt 1) {
 }
 
 & /usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage $testPercentage
-Write-SegmentDuration -TextTemplate "[Measurement][SpeechCompile] {0}s"
+Write-SegmentDuration -Name "SpeechCompile"
 
 # Create acoustic datasets for training
 Write-Host "Creating acoustic datasets for training."
-Set-SegmentStart
+Set-SegmentStart -Name "AccousticDatasetTrain"
 $trainDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
-Write-SegmentDuration -TextTemplate "[Measurement][AccousticDatasetTrain] {0}s"
+Write-SegmentDuration -Name "AccousticDatasetTrain"
 
 # Create acoustic model with scenario "English conversational"
 Write-Host "Creating acoustic model."
-Set-SegmentStart
+Set-SegmentStart -Name "AcousticModelTrain"
 $model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale en-us --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
-Write-SegmentDuration -TextTemplate "[Measurement][AcousticModelTrain] {0}s"
+Write-SegmentDuration -Name "AcousticModelTrain"
 
 if ($testPercentage -gt 0) {
     # Create test acoustic datasets for testing.
-    Set-SegmentStart
+    Set-SegmentStart -Name "AcousticModelTest"
     $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
-    Write-SegmentDuration -TextTemplate "[Measurement][AcousticModelTest] {0}s"
+    Write-SegmentDuration -Name "AcousticModelTest"
 
     # Create test for the model.
-    Set-SegmentStart
+    Set-SegmentStart -Name "Test"
     & /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --wait
-    Write-SegmentDuration -TextTemplate "[Measurement][Test] {0}s"
+    Write-SegmentDuration -Name "Test"
 }
 
 # Create endpoint
-Set-SegmentStart
+Set-SegmentStart -Name "Endpoint"
 & /usr/bin/SpeechCLI/speech endpoint create --name $processName --model $model --language-model $languageModelId --wait
-Write-SegmentDuration -TextTemplate "[Measurement][Endpoint] {0}s"
+Write-SegmentDuration -Name "Endpoint"
 
 Write-Host "Process done."
-Write-SegmentDuration -VarName "mainprocess" -TextTemplate "[Measurement][Process] {0}s"
+Write-SegmentDuration -Name "MainProcess"

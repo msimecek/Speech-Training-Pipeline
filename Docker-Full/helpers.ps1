@@ -1,18 +1,29 @@
-function Set-SegmentStart {
-    param($VarName)
-    
-    if ($null -eq $VarName) { $VarName = "t1" }
+$segmentsVarName = "segments"
 
-    Set-Variable -Name $VarName -Value (Get-Date -UFormat %s) -Scope Global #TODO: move to single array instead of series of variables
+function Set-SegmentStart {
+    param($Name)
+    
+    if ((Test-Path variable:global:$($segmentsVarName)) -eq $false) {
+        Set-Variable -Name $segmentsVarName -Value @() -Scope Global
+    }
+
+    $seg = Get-Variable -Name $segmentsVarName -ValueOnly -Scope Global
+    $seg += @{ $Name = (Get-Date -UFormat %s) }
+    Set-Variable -Name $segmentsVarName -Value $seg -Scope Global
 }
 
 function Write-SegmentDuration {
-    param($VarName, $TextTemplate)
+    param($Name)
 
-    if ($null -eq $VarName) { $VarName = "t1" }
+    $seg = Get-Variable -Name $segmentsVarName -ValueOnly -Scope Global
 
     $end = Get-Date -UFormat %s
-    $start = Get-Variable -Name $VarName -ValueOnly -Scope Global
+    $start = $seg.$Name
 
-    $TextTemplate -f ($end - $start)
+    if ($null -eq $start) {
+        # segment was not started
+        Throw "Segment $Name was not started."
+    }
+
+    "[Measurement][{0}] {1}s" -f $Name, ($end - $start)
 }
