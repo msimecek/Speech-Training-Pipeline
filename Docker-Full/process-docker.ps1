@@ -139,6 +139,9 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     { 
         Throw "source-transcript-$i.txt is not encoded in 'UTF-8 Signature'."
     }
+
+    # Replace non-supported Unicode characters (above U+00A1) with ASCII variants.
+    (Get-Content "$rootDir/$processName-source-transcript-$i.txt") -Replace "\u2019","'" -Replace "\u201A","," -Replace "\u2013","-" -Replace "\u2012","-" -Replace "\u201C",'"' -Replace "\u201D",'"' | Out-File "$rootDir/$processName-source-transcript-$i.txt"
 }
 
 Write-SegmentDuration -VarName "sourceDownload" -TextTemplate "[Measurement][SourceDownload] {0}s"
