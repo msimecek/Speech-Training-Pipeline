@@ -151,7 +151,11 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
     }
 
     # Replace non-supported Unicode characters (above U+00A1) with ASCII variants.
-    (Get-Content "$rootDir/$processName-source-transcript-$i.txt") -Replace "\u2019","'" -Replace "\u201A","," -Replace "\u2013","-" -Replace "\u2012","-" -Replace "\u201C",'"' -Replace "\u201D",'"' | Out-File "$rootDir/$processName-source-transcript-$i.txt"
+    (Get-Content "$rootDir/$processName-source-transcript-$i.txt") `
+        -Replace "\u2019","'" -Replace "\u201A","," `
+        -Replace "\u2013","-" -Replace "\u2012","-" `
+        -Replace "\u201C",'"' -Replace "\u201D",'"' `
+        | Out-File "$rootDir/$processName-source-transcript-$i.txt"
 }
 
 Write-SegmentDuration -Name "SourceDownload"
