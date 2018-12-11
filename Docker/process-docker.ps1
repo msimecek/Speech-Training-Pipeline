@@ -184,7 +184,6 @@ if (!($null -eq $languageModelFile)) {
 
 
 # If baseline endpoint not provided, create one with baseline models first.
-# TODO: make dynamic, based on locale
 if ($null -eq $speechEndpoint) {
     Set-SegmentStart -Name "CreateBaselineEndpoint"
     # Is there a language model present? If not, use the baseline model.
