@@ -38,6 +38,9 @@ $speechEndpoint = $env:speechEndpoint
 #$processName = ""
 $processName = $env:processName
 
+# (Optional) ID of the baseline model which should be used. Default is en-us "V2.5 Conversational (AM/LM adapt)"
+$defaultScenarioId = $env:defaultScenarioId
+
 # (Optional) Duration of chunks in seconds. Default = 10
 $chunkLength = $env:chunkLength
 
@@ -58,8 +61,16 @@ $silenceThreshold = $env:silenceThreshold
 
 # Defaults
 
+if ($null -eq $defaultScenarioId) {
+    $defaultScenarioId = "c7a69da3-27de-4a4b-ab75-b6716f6321e5" # "V2.5 Conversational (AM/LM adapt) - en-us"
+}
+
 if ($null -eq $chunkLength) {
     $chunkLength = 10
+}
+
+if ($null -eq $testPercentage) {
+    $testPercentage = 10
 }
 
 if ($null -eq $silenceDuration) {
@@ -68,10 +79,6 @@ if ($null -eq $silenceDuration) {
 
 if ($null -eq $silenceThreshold) {
     $silenceThreshold = 50
-}
-
-if ($null -eq $testPercentage) {
-    $testPercentage = 10
 }
 
 #-----------------------------------------------------
@@ -94,7 +101,6 @@ node --version
 # Config CLI
 & /usr/bin/SpeechCLI/speech config set --name Build --key $speechKey --region $speechRegion --select
 $idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
-$defaultScenarioId = "c7a69da3-27de-4a4b-ab75-b6716f6321e5" # ID of the baseline model which should be used by default, this represents en-us "V2.5 Conversational (AM/LM adapt)"
 
 Write-SegmentDuration -Name "ToolsInit"
 
