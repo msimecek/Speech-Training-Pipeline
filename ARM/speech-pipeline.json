@@ -1,0 +1,221 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "name": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the container"
+      },
+      "defaultValue": "speechpipeline"
+    },
+    "image": {
+      "type": "string",
+      "metadata": {
+        "description": "Pipeline container image to deploy. Default uses the latest version."
+      },
+      "defaultValue": "msimecek/speech-pipeline"
+    },
+    "cpuCores": {
+      "type": "int",
+      "metadata": {
+        "description": "The number of CPU cores to allocate to the container. Must be an integer."
+      },
+      "defaultValue": 2
+    },
+    "memoryInGB": {
+      "type": "int",
+      "metadata": {
+        "description": "The amount of memory to allocate to the container in gigabytes."
+      },
+      "defaultValue": 3, 
+      "minValue": 3
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "processName": {
+      "type": "string",
+      "defaultValue": "speechpipeline",
+      "metadata": {
+        "description": "Custom name - for better orientation, will be used by different parts of the process. Should not contain spaces and special characters."
+      }
+    },
+    "audioFilesList": {
+      "type": "string",
+      "metadata": {
+        "description": "URL of TXT file containing a list of source WAV file URLs. One file per line."
+      }
+    },
+    "transcriptFilesList": {
+      "type": "string",
+      "metadata": {
+        "description": "URL of TXT file containing a list of transcript TXT files. One file per line. Order matters (should correspond with WAV files."
+      }
+    },
+    "languageModelFile": {
+      "type": "string",
+      "metadata": {
+        "description": "URL of TXT file with the language dataset."
+      }
+    },
+    "languageModelId": {
+      "type": "string",
+      "metadata": {
+        "description": "ID of a pre-trained language model. If sourceLanguageUrl is provided, this will be overwritten!"
+      },
+      "defaultValue": ""
+    },
+    "speechEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "(Optional) ID of a baseline endpoint from the Speech service. If not provided (= $null), new endpoint will be created."
+      },
+      "defaultValue": ""
+    },
+    "speechKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Speech service subscription key."
+      }
+    },
+    "speechRegion": {
+      "type": "string",
+      "metadata": {
+        "description": "Speech service region."
+      },
+      "allowedValues": [
+        "westus",
+        "westus2",
+        "eastus",
+        "eastus2",
+        "eastasia",
+        "southeastasia",
+        "northeurope",
+        "westeurope"
+      ]
+    },
+    "chunkLength": {
+      "type": "int",
+      "metadata": {
+        "description": "(Optional) Duration of the samples (in seconds) that will be created from source files."
+      },
+      "defaultValue": 10
+    },
+    "testPercentage": {
+      "type": "int",
+      "metadata": {
+        "description": "(Optional) How many percent of samples will be used for testing."
+      },
+      "defaultValue": 10
+    },
+    "removeSilence": {
+      "type": "bool",
+      "metadata": {
+        "description": "(Optional) If specified, the process will try to remove silence from original audio."
+      },
+      "defaultValue": true
+    },
+    "silenceDuration": {
+      "type": "int",
+      "metadata": {
+        "description": "(Optional) Duration of silence (in seconds) that must exist before audio is not copied any more."
+      },
+      "defaultValue": 1
+    },
+    "silenceThreshold": {
+      "type": "int",
+      "metadata": {
+        "description": "(Optional) Sample value that should be treated as silence (in dB)."
+      },
+      "defaultValue": 50
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "[parameters('name')]",
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2017-08-01-preview",
+      "location": "[parameters('location')]",
+      "properties": {
+        "containers": [
+          {
+            "name": "[parameters('name')]",
+            "properties": {
+              "image": "[parameters('image')]",
+              "ports": [ ],
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('cpuCores')]",
+                  "memoryInGB": "[parameters('memoryInGB')]"
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "processName",
+                  "value": "[parameters('processName')]"
+                },
+                {
+                  "name": "audioFilesList",
+                  "value": "[parameters('audioFilesList')]"
+                },
+                {
+                  "name": "transcriptFilesList",
+                  "value": "[parameters('transcriptFilesList')]"
+                },
+                {
+                  "name": "[if(equals(parameters('languageModelFile'), ''), 'noLanguageModelFile', 'languageModelFile')]",
+                  "value": "[parameters('languageModelFile')]"
+                },
+                {
+                  "name": "[if(equals(parameters('languageModelId'), ''), 'noLanguageModelId', 'languageModelId')]",
+                  "value": "[parameters('languageModelId')]"
+                },
+                {
+                  "name": "[if(equals(parameters('speechEndpoint'), ''), 'noSpeechEndpoint', 'speechEndpoint')]",
+                  "value": "[parameters('speechEndpoint')]"
+                },
+                {
+                  "name": "speechKey",
+                  "value": "[parameters('speechKey')]"
+                },
+                {
+                  "name": "speechRegion",
+                  "value": "[parameters('speechRegion')]"
+                },
+                {
+                  "name": "chunkLength",
+                  "value": "[parameters('chunkLength')]"
+                },
+                {
+                  "name": "testPercentage",
+                  "value": "[parameters('testPercentage')]"
+                },
+                {
+                  "name": "removeSilence",
+                  "value": "[parameters('removeSilence')]"
+                },
+                {
+                  "name": "silenceDuration",
+                  "value": "[parameters('silenceDuration')]"
+                },
+                {
+                  "name": "silenceThreshold",
+                  "value": "[parameters('silenceThreshold')]"
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux"
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

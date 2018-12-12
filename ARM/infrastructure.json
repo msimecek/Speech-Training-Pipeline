@@ -1,0 +1,105 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "speechServiceName": {
+        "type": "string"
+      },
+      "storageAccountType": {
+        "type": "string",
+        "defaultValue": "Standard_LRS",
+        "allowedValues": [
+          "Standard_LRS",
+          "Standard_GRS",
+          "Standard_ZRS",
+          "Premium_LRS"
+        ]
+      },
+      "location": {
+        "type": "string",
+        "defaultValue": "[resourceGroup().location]",
+        "metadata": {
+          "description": "Location for all resources. Limited to locations where the Speech Service is available."
+        },
+        "allowedValues": [
+            "westus",
+            "westus2",
+            "eastus",
+            "eastus2",
+            "eastasia",
+            "southeastasia",
+            "northeurope",
+            "westeurope"
+        ]
+      },
+      "logAnalytics": {
+          "type": "bool",
+          "defaultValue": true,
+          "metadata": {
+            "description": "Creates a Log Analytics workspace to store container logs from the pipeline."   
+          }
+      }
+    },
+    "variables": {
+      "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'sa')]",
+      "speechServiceId": "[concat(resourceGroup().id,'/providers/','Microsoft.CognitiveServices/accounts/', parameters('speechServiceName'))]",
+      "logAnalyticsName": "[concat(uniquestring(resourceGroup().id), 'logs')]"
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[variables('storageAccountName')]",
+        "location": "[parameters('location')]",
+        "apiVersion": "2018-07-01",
+        "sku": {
+          "name": "[parameters('storageAccountType')]"
+        },
+        "kind": "StorageV2",
+        "properties": {}
+      },
+      {
+        "type": "Microsoft.CognitiveServices/accounts",
+        "sku": {
+          "name": "S0"
+        },
+        "kind": "SpeechServices",
+        "name": "[parameters('speechServiceName')]",
+        "apiVersion": "2016-02-01-preview",
+        "location": "[parameters('location')]",
+        "properties": {},
+        "dependsOn": []
+      },
+      {
+        "condition": "[bool(parameters('logAnalytics')]",
+        "type": "microsoft.operationalinsights/workspaces",
+        "name": "[variables('logAnalyticsName')]",
+        "apiVersion": "2015-11-01-preview",
+        "location": "westeurope",
+        "scale": null,
+        "properties": {
+            "sku": {
+                "name": "free"
+            }
+        },
+        "dependsOn": [ ]
+    }
+    ],
+    "outputs": {
+      "storageAccountName": {
+        "type": "string",
+        "value": "[variables('storageAccountName')]"
+      },
+      "speechkeys": {
+        "type": "object",
+        "value": "[listKeys(variables('speechServiceId'),'2016-02-01-preview')]"
+      },
+      "speechkey1": {
+        "type": "string",
+        "value": "[listKeys(variables('speechServiceId'),'2016-02-01-preview').key1]"
+      },
+      "speechkey2": {
+        "type": "string",
+        "value": "[listKeys(variables('speechServiceId'),'2016-02-01-preview').key2]"
+      }
+    }
+  }
