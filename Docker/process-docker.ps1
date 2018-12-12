@@ -64,6 +64,16 @@ $silenceThreshold = $env:silenceThreshold
 
 #-----------------------------------------------------
 
+# Required checks
+if (($null -eq $audioFilesList) -or `
+    ($null -eq $transcriptFilesList) -or `
+    ($null -eq $speechKey) -or `
+    ($null -eq $speechRegion) -or `
+    ($null -eq $processName) ) 
+{
+    Throw "Required parameter missing."
+}
+
 # Defaults
 
 if ($null -eq $defaultScenarioId) {
@@ -121,8 +131,8 @@ $sourceTxts = @()
 
 Set-SegmentStart -Name "SourceDownload"
 
-$sourceWavs += (Invoke-WebRequest $audioFilesList | Select -ExpandProperty Content) -Split '\n' | ? {$_}
-$sourceTxts += (Invoke-WebRequest $transcriptFilesList | Select -ExpandProperty Content) -Split '\n' | ? {$_}
+$sourceWavs += (Invoke-WebRequest $audioFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\n' | ? {$_}
+$sourceTxts += (Invoke-WebRequest $transcriptFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\n' | ? {$_}
 
 # Download WAV files locally
 New-Item $rootDir/SourceWavs -ItemType Directory -Force
