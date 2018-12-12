@@ -103,12 +103,13 @@ if ($null -eq $silenceThreshold) {
 
 #-----------------------------------------------------
 
-. ../helpers.ps1 # include
+$rootDir = (Get-Item -Path ".\" -Verbose).FullName;
+
+. /usr/src/helpers.ps1 # include
 
 Set-SegmentStart -Name "MainProcess" # measurements
 Set-SegmentStart -Name "ToolsInit"
 
-$rootDir = (Get-Item -Path ".\" -Verbose).FullName;
 
 # Test tools.
 Write-Host "Checking dependencies."
