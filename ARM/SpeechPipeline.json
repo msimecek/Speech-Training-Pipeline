@@ -41,6 +41,12 @@
         "functionAppName": {
             "defaultValue": "speechapp",
             "type": "string"
+        },
+        "principalAppId": {
+            "type": "string"
+        },
+        "principalAppSecret": {
+            "type": "securestring"
         }
     },
     "variables": {
@@ -192,6 +198,22 @@
                         {
                             "name": "ResourceGroupName",
                             "value": "[resourceGroup().name]"
+                        },
+                        {
+                            "name": "Location",
+                            "value": "[resourceGroup().location]"
+                        },
+                        {
+                            "name": "PrincipalAppId",
+                            "value": "[parameters('principalAppId')]"
+                        },
+                        {
+                            "name": "PrincipalAppSecret",
+                            "value": "[parameters('principalAppSecret')]"
+                        },
+                        {
+                            "name": "AzureTenantId",
+                            "value": "[subscription().tenantId]"
                         }
                     ]
                 }
@@ -218,7 +240,7 @@
 						"[resourceId('Microsoft.Web/Sites', variables('functionAppName'))]"
 					],
 					"properties": {
-						"scmType": "ExternalGit"
+						"scmType": "GitHub"
 					}
 				}
             ]
@@ -1132,11 +1154,23 @@
                             "type": "Http",
                             "inputs": {
                                 "body": {
-                                    "pipeline.audioFilesList": "@{variables('audioFiles')}",
-                                    "pipeline.processName": "@{triggerBody()?['processName']}"
+                                    "containerImage": "@{triggerBody()?['containerImage']}",
+                                    "pipeline.processName": "@{triggerBody()?['processName']}",
+                                    "pipeline.audioFilesList": "@{body('Generate_languageInput_file_URI')?['WebUrl']}",
+                                    "pipeline.transcriptFilesList": "",
+                                    "pipeline.languageModelFile": "",
+                                    "pipeline.languageModelId": "",
+                                    "pipeline.speechEndpoint": "",
+                                    "pipeline.speechKey": "@{triggerBody()?['speechKey']}",
+                                    "pipeline.speechRegion": "@{triggerBody()?['location']}",
+                                    "pipeline.chunkLength": "@{triggerBody()?['chunkLength']}",
+                                    "pipeline.testPercentage": "@{triggerBody()?['testPercentage']}",
+                                    "pipeline.removeSilence": "@{triggerBody()?['removeSilence']}",
+                                    "pipeline.silenceDuration": "@{triggerBody()?['silenceDuration']}",
+                                    "pipeline.silenceThreshold": "@{triggerBody()?['silenceThreshold']}"
                                 },
                                 "method": "POST",
-                                "uri": "https://pipdeploytest.azurewebsites.net/api/Start"
+                                "uri": "[concat('https://', variables('functionAppName'), '.azurewebsites.net/api/Start')]"
                             }
                         }
                     },
@@ -1156,7 +1190,8 @@
             },
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts_speechfiles_name'))]",
-                "[resourceId('Microsoft.Web/connections', 'azureblob')]"
+                "[resourceId('Microsoft.Web/connections', 'azureblob')]",
+                "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
             ]
         },
         {
