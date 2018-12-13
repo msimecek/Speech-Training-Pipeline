@@ -1170,7 +1170,7 @@
                                     "pipeline.silenceDuration": "@{triggerBody()?['silenceDuration']}",
                                     "pipeline.silenceThreshold": "@{triggerBody()?['silenceThreshold']}",
                                     "pipeline.webhookUrl": "[concat('https://', variables('functionAppName'), '.azurewebsites.net/api/Remove')]",
-                                    "pipeline.webhookContent": "{ \"containerGroupName\": \"@{triggerBody()?['processName']\"}"
+                                    "pipeline.webhookContent": "{\"containerGroupName\": \"@{triggerBody()?['processName']}\"}"
                                 },
                                 "method": "POST",
                                 "uri": "[concat('https://', variables('functionAppName'), '.azurewebsites.net/api/Start')]"
