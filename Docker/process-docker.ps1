@@ -62,6 +62,13 @@ $silenceDuration = $env:silenceDuration
 # (Optional) The sample value (in dB) that should be treated as silence. Default = 50 decibels
 $silenceThreshold = $env:silenceThreshold
 
+# (Optional) URL to an endpoint where the process will POST when finished.
+# Contains process name, error list and Content.
+$webhookUrl = $env:webhookUrl
+
+# (Optional) Custom content to be added to the webhook message.
+$webhookContent = $env:webhookContent
+
 #-----------------------------------------------------
 
 # Required checks
@@ -300,3 +307,15 @@ Write-SegmentDuration -Name "Endpoint"
 
 Write-Host "Process done."
 Write-SegmentDuration -Name "MainProcess"
+
+if (!($null -eq $webhookUrl)) {
+    $content = @{
+        ProcessName = $processName;
+        Errors = $Error;
+        Content = $webhookContent;
+    }
+
+    Invoke-WebRequest -Uri $webhookUrl -Method POST -Body ($content | ConvertTo-Json) | Select-Object -Property StatusCode, StatusDescription
+
+    Write-Host "Webhook triggered."
+}
