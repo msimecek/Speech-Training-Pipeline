@@ -237,7 +237,8 @@
 					"name": "web",
 					"type": "config",
 					"dependsOn": [
-						"[resourceId('Microsoft.Web/Sites', variables('functionAppName'))]"
+                        "[resourceId('Microsoft.Web/Sites', variables('functionAppName'))]",
+                        "[resourceId('Microsoft.Web/Sites/sourcecontrols', variables('functionAppName'), 'web')]"
 					],
 					"properties": {
 						"scmType": "GitHub"
