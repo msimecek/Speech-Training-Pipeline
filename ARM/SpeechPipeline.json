@@ -1168,7 +1168,9 @@
                                     "pipeline.testPercentage": "@{triggerBody()?['testPercentage']}",
                                     "pipeline.removeSilence": "@{triggerBody()?['removeSilence']}",
                                     "pipeline.silenceDuration": "@{triggerBody()?['silenceDuration']}",
-                                    "pipeline.silenceThreshold": "@{triggerBody()?['silenceThreshold']}"
+                                    "pipeline.silenceThreshold": "@{triggerBody()?['silenceThreshold']}",
+                                    "pipeline.webhookUrl": "[concat('https://', variables('functionAppName'), '.azurewebsites.net/api/Remove')]",
+                                    "pipeline.webhookContent": ""
                                 },
                                 "method": "POST",
                                 "uri": "[concat('https://', variables('functionAppName'), '.azurewebsites.net/api/Start')]"
