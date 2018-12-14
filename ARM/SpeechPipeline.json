@@ -11,25 +11,36 @@
         },
         "storageAccountName": {
             "defaultValue": "speech",
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "description": "Main Storage Account - all input files will be uploaded to this SA."
+            }
         },
         "speakerRecognitionServiceName": {
             "defaultValue": "speaker",
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "description": "A service dedicated to speaker recognition."
+            }
         },
         "speechServiceName": {
             "defaultValue": "speech",
-            "type": "string"
-        },
-        "connections_azureblob_name": {
-            "defaultValue": "azureblob",
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "description": "A service dedicated to speech to text."
+            }
         },
         "principalAppId": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "description": "Application/Client ID. Service principal application needs to have the Contributor role in the target Resrouce Group. This can be set after deployment."
+            }
         },
         "principalAppSecret": {
-            "type": "securestring"
+            "type": "securestring",
+            "metadata": {
+                "description": "App secret of the service principal application."
+            }
         }
     },
     "variables": {
@@ -1166,7 +1177,7 @@
                     "$connections": {
                         "value": {
                               "azureblob": {
-                                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_azureblob_name'))]",
+                                "connectionId": "[resourceId('Microsoft.Web/connections', 'azureblob')]",
                                 "connectionName": "azureblob",
                                 "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azureblob')]"
                             }
