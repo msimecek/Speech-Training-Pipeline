@@ -41,10 +41,21 @@ SP key 62a************************
 
 If at any time you need to get the values of the Service Principal, you can simply run the script [SpeechPipelineUtils.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/SpeechPipelineUtils.sh) although this is best run after the Deploy from ARM step.
 
-###Deploy button and ARM parameters (Craig)
-* Required parameters - Deplyment, storage, 
+### Deploy button and ARM parameters (Craig)
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshanepeckham%2FCustomSpeech-Processing-Pipeline%2Fmaster%2FDeploy%2FSpeechPipeline.json" target="_blank">
+    <img src="http://azuredeploy.net/deploybutton.png"/>
+</a>
+<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fshanepeckham%2FCustomSpeech-Processing-Pipeline%2Fmaster%2FDeploy%2FSpeechPipeline.json" target="_blank">
+    <img src="http://armviz.io/visualizebutton.png"/>
+</a>
 
-###Components and in depth description (Martin function/container, Craig submit, Speaker Enrol and Id)
+The <b>deploy button</b> above automatically provisions the needed Azure services for the Custom Speech processing pipeline from an ARM template. The <b>visualise button</b> above displays a visual representation of the services that are to be provisioned from the template.
+
+Upon provisioning the deployment - the settings of the services can be edited to better reflect meaningful identifiers within your specific use case. 
+
+* `Deployment Name`: If multiple instances planned, change to indicate the specific pipeline. This will dynamically change subsequently generated service names to mitigate naming conflicts.
+
+### Components and in depth description (Martin function/container, Craig submit, Speaker Enrol and Id)
 * Storage and blobs
 
 #### Logic Apps
