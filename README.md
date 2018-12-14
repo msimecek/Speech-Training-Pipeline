@@ -9,7 +9,7 @@ The goal is to simplify data preparation and lower the barrier of entry overall.
 
 ## Installation
 
-* Requirements
+*Requirements
 To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the az cli installed - see [Azure Speech CLI](https://github.com/msimecek/Azure-Speech-CLI)
 
 ### Create Resource Group and Service Principal 
