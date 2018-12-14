@@ -6,6 +6,41 @@ The goal is to simplify data preparation and lower the barrier of entry overall.
 
 ![Developer's view](_images/pipeline-developer-view.png)
 
+
+##Installation
+
+* Requirements
+
+###Run script - resource group and service principal (Shane) **** get logic endpoint
+
+###Deploy button and ARM parameters (Craig)
+* Required parameters - Deplyment, storage, 
+
+###Components and in depth description (Martin function/container, Craig submit, Speaker Enrol and Id)
+* Storage and blobs
+* Logic Apps
+ ** Submit
+ ** Enrol
+ ** Identify
+
+* Function App
+** Methods - remove
+** start
+
+** Cognitive Services
+
+##How to use
+###Data Preparation
+###Upload to sotrage
+###Paramneters required to start process
+###
+
+###Todo
+* Add monitoring solutiuon
+
+###Detailed description All of us
+
+
 ## References
 
 This pipeline references two other repos:
