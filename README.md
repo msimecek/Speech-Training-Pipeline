@@ -108,11 +108,53 @@ Our test runs show that optimal amount of container RAM is 3.5 GB with CPU count
 }
 ```
 
+#### Cognitive Services
+
+As the name suggests the speech training pipeline works with speech-related services. Specifically [Speech](https://azure.microsoft.com/en-us/services/cognitive-services/speech-to-text/) service and [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) service. Both are part of [Azure Cognitive Services](https://azure.microsoft.com/en-us/services/cognitive-services/?v=18.44b), a set of RESTful APIs which are easy to integrate into any application.
+
+> **Note:** If you search for Azure Speech service, you may find several offerings (Custom Speech, Bing Speech etc.). We're using the unified Speech service which replaces them all.
+
+We recommend using the **Standard (S0)** tier for both services, because the pipeline process is quite intensive on API calls and Free tier usually hits its limit. Our ARM template uses **S0** by default.
+
+Once you create your services, you can manage your Speech entities using a web portal or unofficial CLI tool.
+
+**Portal**
+
+First get your Speech key from the Azure Portal
+
+![Azure Portal, speech keys](_images/portal-key.png)
+
+Then navigate to https://cris.ai, sign in and connect your subscription. If your Speech service wasn't provisioned in the US, add your region to the URL (such as https://northeurope.cris.ai).
+
+![Connect existing subscription to CRIS](_images/cris-connect.png)
+
+If the connection passes, you will be able to see and manage all of the resources created by the training pipeline.
+
+**CLI**
+
+To get the unofficial Speech CLI tool, go to the [GitHub repo](https://github.com/msimecek/Azure-Speech-CLI), open **Releases** and download a ZIP archive of a version for your operating system (Windows, Mac or Linux).
+
+Configure it with your Speech key and region:
+
+```
+speech config set --name Pipeline --key 44564654keykey5465456 --region northeurope --select
+```
+
+Then you can work with datasets, models, tests, endpoints or transcripts:
+
+```
+speech dataset list
+speech model list
+speech test list
+speech endpoint list
+speech transcript list
+etc.
+```
 
 
-** Cognitive Services
 
 ##How to use
+
 ###Data Preparation
 ###Upload to sotrage
 ###Paramneters required to start process
