@@ -88,6 +88,8 @@ The enrollment service will return a GUID upon successful registration and the L
 #### The Recognise Logic App
 
  This Logic App will recognise a speaker by using a short clip of a voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information  
+ 
+ ![RecogniseLogicApp](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/_images/recogniselogicapp.png)
   
 The recongise service will return a GUID upon successful identification and the Logic App will read a file from blob storage that will retrieve the reference to the speaker's name. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
 
