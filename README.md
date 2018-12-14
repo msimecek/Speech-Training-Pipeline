@@ -38,6 +38,9 @@ Retrying role assignment creation: 2/36
 Created SP with appid 6b84e051-*****************
 SP key 62a************************
 ```
+
+If at any time you need to get the values of the Service Principal, you can simply run the script [SpeechPipelineUtils.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/SpeechPipelineUtils.sh) although this is best run after the Deploy from ARM step.
+
 ###Deploy button and ARM parameters (Craig)
 * Required parameters - Deplyment, storage, 
 
