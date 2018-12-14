@@ -81,7 +81,7 @@ The enrollment service will return a GUID upon successful registration and the L
 ```
 
 
-*Outputs
+* Outputs
  
  The logic app will output the GUID from the enrollment service and write a GUID/Speaker reference blob to storage.
  
@@ -93,7 +93,7 @@ The enrollment service will return a GUID upon successful registration and the L
   
 The recongise service will return a GUID upon successful identification and the Logic App will read a file from blob storage that will retrieve the reference to the speaker's name. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
 
-*Inputs
+* Inputs
 ```
 {
     "properties": {
