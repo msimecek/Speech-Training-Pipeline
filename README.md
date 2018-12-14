@@ -51,6 +51,42 @@ SP key 62a************************
  ** Submit
  #### The Enrol Logic App
  
+ This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
+ 
+![enroll]https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/_images/enrolllogicapp.png 
+ 
+The enrollment service will return a GUID upon successful registration and the Logic App will write a file to blob storage that will reference the speaker's name to the enrolled voice. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
+
+*Inputs
+```
+    "properties": {
+        "fileURL": { 'This is the url of the voice file you want to enroll
+            "type": "string"
+        },
+        "jobName": { 'This is the name of the process so that you can monitor it
+            "type": "string"
+        },
+        "shortAudio": { 'Instruct the service to waive the recommended minimum audio limit needed for enrollment. Set value to “true” to force enrollment using any audio length (min. 1 second).
+            "type": "string"
+        },
+        "speakerName": { 'The name of the person you want to enroll
+            "type": "string"
+        },
+        "speakerURL": { 'The endpoint for the Speaker Cognitive Service - see https://westus.dev.cognitive.microsoft.com/docs/services/563309b6778daf02acc0a508/operations/5645c3271984551c84ec6797
+            "type": "string"
+        },
+        "speechKey": { 'Your Speaker Recognition Cognitive Services key
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
+```
+
+
+*Outputs
+ 
+ 
  
  ** Identify
 
