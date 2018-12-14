@@ -65,7 +65,7 @@ Upon provisioning the deployment - the settings of the services can be edited to
  
  ![Submit Logic App](_images/submit-la.png)
  
- When called from the specified endpoint with given parameters, the logic app generates a URI for the items in blob storage specified with the `audioBlobLocation` and `textBlobLocation` parameters. The logic app then passes the URI alongside various other environement variables to the container, spinning up the process.
+ When called from the specified endpoint with given parameters, the logic app generates a URI for the items in blob storage specified with the `audioBlobLocation` and `textBlobLocation` parameters. The logic app then passes the URI alongside various other environment variables to the container, spinning up the process.
  
  *Inputs*
  ```
