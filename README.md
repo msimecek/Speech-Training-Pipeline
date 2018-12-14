@@ -85,13 +85,38 @@ The enrollment service will return a GUID upon successful registration and the L
  
  The logic app will output the GUID from the enrollment service and write a GUID/Speaker reference blob to storage.
  
-#### The Identify Logic App
+#### The Recognise Logic App
 
  This Logic App will recognise a speaker by using a short clip of a voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information  
   
+The recongise service will return a GUID upon successful identification and the Logic App will read a file from blob storage that will retrieve the reference to the speaker's name. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
 
- 
-  ** Identify
+*Inputs
+```
+{
+    "properties": {
+        "fileURL": {
+            "type": "string"
+        },
+        "identificationProfileIds": { 'These are the GUIDS of all the candidate speakers currently enrolled
+            "type": "string"
+        },
+        "shortAudio": { 'Instruct the service to waive the recommended minimum audio limit needed for enrollment. Set value to “true” to force enrollment using any audio length (min. 1 second).
+            "type": "string"
+        },
+        "speakerURL": { 'The endpoint for the Speaker Cognitive Service - see https://westus.dev.cognitive.microsoft.com/docs/services/563309b6778daf02acc0a508/operations/5645c523778daf217c292592
+            "type": "string"
+        },
+        "speechKey": { 'Your Speaker Recognition Cognitive Services key
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
+```
+*Outputs
+
+The name of the speaker as retrieved from the blob storage file matching the speaker GUID
 
 * Function App
 ** Methods - remove
