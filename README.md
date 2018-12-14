@@ -6,6 +6,7 @@ The goal is to simplify data preparation and lower the barrier of entry overall.
 
 ![Developer's view](_images/pipeline-developer-view.png)
 
+**This README is work in progress. Bear with us until we finish it :)**
 
 ## Installation
 
@@ -41,12 +42,14 @@ SP key 62a************************
 
 If at any time you need to get the values of the Service Principal, you can simply run the script [SpeechPipelineUtils.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/SpeechPipelineUtils.sh) although this is best run after the Deploy from ARM step.
 
-### Deploy button and ARM parameters (Craig)
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshanepeckham%2FCustomSpeech-Processing-Pipeline%2Fmaster%2FDeploy%2FSpeechPipeline.json" target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
+### Deploy to Azure
+
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmsimecek%2FSpeech-Training-Pipeline%2Fmaster%2FARM%2FSpeechPipeline.json" target="_blank">
+ <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
-<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fshanepeckham%2FCustomSpeech-Processing-Pipeline%2Fmaster%2FDeploy%2FSpeechPipeline.json" target="_blank">
-    <img src="http://armviz.io/visualizebutton.png"/>
+
+<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fmsimecek%2FSpeech-Training-Pipeline%2Fmaster%2FARM%2FSpeechPipeline.json" target="_blank">
+ <img src="http://armviz.io/visualizebutton.png"/>
 </a>
 
 The <b>deploy button</b> above automatically provisions the needed Azure services for the Custom Speech processing pipeline from an ARM template. The <b>visualise button</b> above displays a visual representation of the services that are to be provisioned from the template.
@@ -59,14 +62,14 @@ Upon provisioning the deployment - the settings of the services can be edited to
 * Storage and blobs
 
 #### Logic Apps
- #### The Submit Logic App
- 
- This Logic App handles the model deployment and generates URIs for the files in blob storage.
- 
+#### The Submit Logic App
+
+This Logic App handles the model deployment and generates URIs for the files in blob storage.
+
  ![Submit Logic App](_images/submit-la.png)
- 
+
  When called from the specified endpoint with given parameters, the logic app generates a URI for the items in blob storage specified with the `audioBlobLocation` and `textBlobLocation` parameters. The logic app then passes the URI alongside various other environment variables to the container, spinning up the process.
- 
+
  *Inputs*
  ```
  {
@@ -122,17 +125,17 @@ Upon provisioning the deployment - the settings of the services can be edited to
     },
     "type": "object"
 }
-```
+ ```
  *Outputs*
- 
+
  A POST request which initialises the container with the audio files and process name.
- 
+
  #### The Enroll Logic App
- 
+
  This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
- 
-![enroll](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/_images/enrolllogicapp.png)
- 
+
+![enroll](_images/enrolllogicapp.png)
+
 The enrollment service will return a GUID upon successful registration and the Logic App will write a file to blob storage that will reference the speaker's name to the enrolled voice. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
 
 *Inputs*
@@ -163,16 +166,16 @@ The enrollment service will return a GUID upon successful registration and the L
 
 
 *Outputs*
- 
+
  The logic app will output the GUID from the enrollment service and write a GUID/Speaker reference blob to storage.
- 
+
 #### The Recognise Logic App
 
  This Logic App will recognise a speaker by using a short clip of a voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information  
- 
- ![RecogniseLogicApp](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/_images/recogniselogicapp.png)
-  
-The recongise service will return a GUID upon successful identification and the Logic App will read a file from blob storage that will retrieve the reference to the speaker's name. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
+
+ ![RecogniseLogicApp](_images/recogniselogicapp.png)
+
+The recognise service will return a GUID upon successful identification and the Logic App will read a file from blob storage that will retrieve the reference to the speaker's name. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
 
 *Inputs*
 ```
@@ -388,7 +391,9 @@ If you don't specify `containerImage`, default will be used (which is the latest
 ###Todo
 * Add monitoring solutiuon
 
-###Detailed description All of us
+## Detailed description
+
+TBD
 
 
 ## References
