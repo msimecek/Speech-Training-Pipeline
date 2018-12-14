@@ -38,9 +38,6 @@ Retrying role assignment creation: 2/36
 Created SP with appid 6b84e051-*****************
 SP key 62a************************
 ```
-
-
-
 ###Deploy button and ARM parameters (Craig)
 * Required parameters - Deplyment, storage, 
 
@@ -49,7 +46,7 @@ SP key 62a************************
 
 #### Logic Apps
  ** Submit
- #### The Enrol Logic App
+ #### The Enroll Logic App
  
  This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
  
@@ -86,9 +83,15 @@ The enrollment service will return a GUID upon successful registration and the L
 
 *Outputs
  
+ The logic app will output the GUID from the enrollment service and write a GUID/Speaker reference blob to storage.
  
+#### The Identify Logic App
+
+ This Logic App will recognise a speaker by using a short clip of a voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information  
+  
+
  
- ** Identify
+  ** Identify
 
 * Function App
 ** Methods - remove
