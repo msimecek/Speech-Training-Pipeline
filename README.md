@@ -46,9 +46,12 @@ SP key 62a************************
 
 ###Components and in depth description (Martin function/container, Craig submit, Speaker Enrol and Id)
 * Storage and blobs
-* Logic Apps
+
+#### Logic Apps
  ** Submit
- ** Enrol
+ #### The Enrol Logic App
+ 
+ 
  ** Identify
 
 * Function App
