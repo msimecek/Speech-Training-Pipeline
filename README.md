@@ -19,13 +19,64 @@ The goal is to simplify data preparation and lower the barrier of entry overall.
 ###Components and in depth description (Martin function/container, Craig submit, Speaker Enrol and Id)
 * Storage and blobs
 * Logic Apps
- ** Submit
- ** Enrol
- ** Identify
+   ** Submit
+    ** Enrol
+    ** Identify
 
-* Function App
-** Methods - remove
-** start
+####  Function App (Pipeline Manager)
+
+Pipeline container is provisioned on-demand when the process is initiated and after input files are processed. This final step is represented by an HTTP POST call to an Azure Function.
+
+This Function App is fairly simple - it uses Azure Management NuGet package (`Microsoft.Azure.Management.Fluent`) to create and remove Container Groups in the same Resource Group where the whole process runs.
+
+There are three functions:
+
+| Function    | Trigger   | Expected inputs                                              |
+| ----------- | --------- | ------------------------------------------------------------ |
+| Start       | HTTP POST | JSON request body with `containerImage`, `pipeline.processName` and any of the pipieline settings (see example below). |
+| StartWorker | Queue     | Storage Queue message with `ContainerName`, `Location`, `ResourceGroup`, `ContainerImage` and `Env`. |
+| Remove      | HTTP POST | JSON request body with `ProcessName`.                        |
+
+**Examples:**
+
+POST /api/Start
+
+```json
+{
+  "containerImage": "msimecek/speech-pipeline:0.16-full",
+  "pipeline.processName": "mujproces",
+  "pipeline.audioFilesList": "https://storageacc.blob.core.windows.net/files/text/language.txt?sv=..saskey",
+  "pipeline.transcriptFilesList": "https://storageacc.blob.core.windows.net/files/text/textInput.txt?sv=..saskey",
+  "pipeline.languageModelFile": "https://storageacc.blob.core.windows.net/files/text/language.txt?sv=..saskey",
+  "pipeline.languageModelId": "",
+  "pipeline.speechEndpoint": "",
+  "pipeline.speechKey": "44564654keykey5465456",
+  "pipeline.speechRegion": "northeurope",
+  "pipeline.chunkLength": "",
+  "pipeline.testPercentage": "",
+  "pipeline.removeSilence": "true",
+  "pipeline.silenceDuration": "",
+  "pipeline.silenceThreshold": "",
+  "pipeline.webhookUrl": "",
+  "pipeline.webhookContent": ""
+}
+```
+
+POST /api/Remove
+
+```json
+{
+	"ProcessName": "mujproces",
+	"Errors": null,
+	"Content": null
+}
+```
+
+
+
+
+
+
 
 ** Cognitive Services
 
