@@ -10,8 +10,36 @@ The goal is to simplify data preparation and lower the barrier of entry overall.
 ##Installation
 
 * Requirements
+To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the az cli installed - see [Azure Speech CLI](https://github.com/msimecek/Azure-Speech-CLI)
 
-###Run script - resource group and service principal (Shane) **** get logic endpoint
+###Create Resource Group and Service Principal 
+In this we will be creating the Resource Group and the Service Principal that has the rights to create Azure resources within the provisioned Resource Group. 
+
+1) Log in to the az cli
+2) Run script [createRGandSP](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/createRGandSP.sh)
+3) Copy the values output by the script as you will need them in the ARM deploy step
+
+The output should look like the following:
+
+```
+{
+  "id": "/subscriptions/**************************/resourceGroups/speech16",
+  "location": "westeurope",
+  "managedBy": null,
+  "name": "speech16",
+  "properties": {
+    "provisioningState": "Succeeded"
+  },
+  "tags": null
+}
+Created resource group speech16
+Retrying role assignment creation: 1/36
+Retrying role assignment creation: 2/36
+Created SP with appid 6b84e051-*****************
+SP key 62a************************
+```
+
+
 
 ###Deploy button and ARM parameters (Craig)
 * Required parameters - Deplyment, storage, 
