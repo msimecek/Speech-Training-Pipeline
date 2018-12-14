@@ -151,11 +151,28 @@ speech transcript list
 etc.
 ```
 
-
+TODO: speaker recognition
 
 ##How to use
 
+
+
 ###Data Preparation
+
+The training process uses audio samples along with their respective transcripts to create a speech to text model. Before you run start the training process you will need two sets of data:
+
+* Audio - should be full audio recordings that you want to use for training. 
+  * can be multiple files (for example several sports matches)
+  * can be in any of the common formats (WAV, MP3, MP4...)
+  * can be audio-only or with video (visual part will be ignored during the process)
+  * should represent the audio environment in which the model will be used (that is with background noise, difficult accents etc.)
+  * recommended total length is no less than 3 hours
+* Transcripts - should be full transcript of each of the audio files.
+  * needs to be plain text (TXT)
+  * needs to be encoded as UTF-8 BOM
+  * should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/), typically `–`, `‘`, `‚`, `“` etc. (curly characters produced by Microsoft Word)
+  * should have the same filename as respective audio file
+
 ###Upload to sotrage
 ###Paramneters required to start process
 ###
