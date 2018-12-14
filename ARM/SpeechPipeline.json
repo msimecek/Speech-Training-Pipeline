@@ -4,42 +4,25 @@
     "parameters": {
         "deploymentName": {
             "defaultValue": "SpeechTraining",
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "description": "Deployment name will be used as base for all deployed resources. Should be meaningful and unique for the subscription."   
+            }
         },
-        "storageAccounts_speechfiles_name": {
+        "storageAccountName": {
             "defaultValue": "speech",
             "type": "string"
         },
-        "accounts_speaker_recognition_service_name": {
+        "speakerRecognitionServiceName": {
             "defaultValue": "speaker",
             "type": "string"
         },
-        "accounts_speech_service_name": {
+        "speechServiceName": {
             "defaultValue": "speech",
-            "type": "string"
-        },
-        "workflows_enrollSpeaker_name": {
-            "defaultValue": "enroll",
-            "type": "string"
-        },
-        "workflows_speakerrecognition_name": {
-            "defaultValue": "recognise",
-            "type": "string"
-        },
-        "workflows_speech_job_name": {
-            "defaultValue": "submit",
             "type": "string"
         },
         "connections_azureblob_name": {
             "defaultValue": "azureblob",
-            "type": "string"
-        },
-        "hostingPlanName": {
-            "defaultValue": "speechplan",
-            "type": "string"
-        },
-        "functionAppName": {
-            "defaultValue": "speechapp",
             "type": "string"
         },
         "principalAppId": {
@@ -50,14 +33,14 @@
         }
     },
     "variables": {
-        "storageAccounts_speechfiles_name": "[concat(parameters('storageAccounts_speechfiles_name'), uniqueString(parameters('deploymentName')))]",
-        "accounts_speaker_recognition_service_name": "[concat(parameters('accounts_speaker_recognition_service_name'), uniqueString(parameters('deploymentName')))]",
-        "accounts_speech_service_name": "[concat(parameters('accounts_speech_service_name'), uniqueString(parameters('deploymentName')))]",
-        "workflows_enrollSpeaker_name": "[concat(parameters('workflows_enrollSpeaker_name'), uniqueString(parameters('deploymentName')))]",
-        "workflows_speakerrecognition_name": "[concat(parameters('workflows_speakerrecognition_name'), uniqueString(parameters('deploymentName')))]",
-        "workflows_speech_job_name": "[concat(parameters('workflows_speech_job_name'), uniqueString(parameters('deploymentName')))]",
-        "hostingPlanName": "[concat(parameters('hostingPlanName'), uniqueString(parameters('deploymentName')))]",
-        "functionAppName": "[concat(parameters('functionAppName'), uniqueString(parameters('deploymentName')))]"
+        "storageAccounts_speechfiles_name": "[concat(parameters('storageAccountName'), uniqueString(parameters('deploymentName')))]",
+        "accounts_speaker_recognition_service_name": "[concat(parameters('speakerRecognitionServiceName'), uniqueString(parameters('deploymentName')))]",
+        "accounts_speech_service_name": "[concat(parameters('speechServiceName'), uniqueString(parameters('deploymentName')))]",
+        "workflows_enrollSpeaker_name": "[concat('enroll-', uniqueString(parameters('deploymentName')))]",
+        "workflows_speakerrecognition_name": "[concat('recognise-', uniqueString(parameters('deploymentName')))]",
+        "workflows_speech_job_name": "[concat('submit-', uniqueString(parameters('deploymentName')))]",
+        "hostingPlanName": "[concat('speechplan-', uniqueString(parameters('deploymentName')))]",
+        "functionAppName": "[concat('speechapp-', uniqueString(parameters('deploymentName')))]"
     },
     "resources": [
         {
