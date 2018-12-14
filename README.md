@@ -25,11 +25,23 @@ The goal is to simplify data preparation and lower the barrier of entry overall.
 
 ####  Function App (Pipeline Manager)
 
-Pipeline container is provisioned on-demand when the process is initiated and after input files are processed. This final step is represented by an HTTP POST call to an Azure Function.
+Pipeline container is provisioned on-demand when the process is initiated and after input files are processed. Container provisioning is represented by an HTTP POST call to an Azure Function, which is deployed [from GitHub repo](https://github.com/msimecek/Pipeline-Manager).
 
 This Function App is fairly simple - it uses Azure Management NuGet package (`Microsoft.Azure.Management.Fluent`) to create and remove Container Groups in the same Resource Group where the whole process runs.
 
-There are three functions:
+**Configuration**
+
+> **Note:** All of these settings are filled automatically when deploying  with Azure Resource Manager.
+
+In addition to standard Function App settings (`AzureWebJobsStorage` etc.) these environment variables / application settings are required:
+
+* `PrincipalAppId`: Application/Client ID of the service principal you use.
+* `PrincipalAppSecret`: Password/secret of the service principal application.
+* `AzureTenantId`: This value is returned by the `subscription().tenantId` statement in Resource Manager. Or you can get it from the Subscription section in the Azure portal.
+* `ResourceGroupName`: In which Resource Group is the pipeline container supposed to run.
+* `Location`: In which region is the pipeline container supposed to run.
+
+**Functions:**
 
 | Function    | Trigger   | Expected inputs                                              |
 | ----------- | --------- | ------------------------------------------------------------ |
@@ -37,9 +49,33 @@ There are three functions:
 | StartWorker | Queue     | Storage Queue message with `ContainerName`, `Location`, `ResourceGroup`, `ContainerImage` and `Env`. |
 | Remove      | HTTP POST | JSON request body with `ProcessName`.                        |
 
+`Start` input parameters are parsed first - all values starting with `pipeline.` are passed as ENV variables to the contaier (without the *pipeline.* part).
+
+Becuase `Start` is designed to return as fast as possible, it enqueues a message with all parameters and then returns HTTP 202 Accepted. `StartWorker` then takes on and uses Azure Management SDK to provision the container.
+
+```csharp
+var containerGroup = azure.ContainerGroups.Define(startmessage.ContainerName)
+    .WithRegion(startmessage.Location)
+    .WithExistingResourceGroup(startmessage.ResourceGroup)
+    .WithLinux()
+    .WithPublicImageRegistryOnly()
+    .WithoutVolume()
+    .DefineContainerInstance("pipeline")
+    	.WithImage(startmessage.ContainerImage)
+    	.WithoutPorts()
+    	.WithCpuCoreCount(2)
+    	.WithMemorySizeInGB(3.5)
+    	.WithEnvironmentVariables(startmessage.Env)
+    	.Attach()
+    	.WithRestartPolicy(ContainerGroupRestartPolicy.Never)
+    	.Create();
+```
+
+Our test runs show that optimal amount of container RAM is 3.5 GB with CPU count 2.
+
 **Examples:**
 
-POST /api/Start
+*POST /api/Start*
 
 ```json
 {
@@ -62,7 +98,7 @@ POST /api/Start
 }
 ```
 
-POST /api/Remove
+*POST /api/Remove*
 
 ```json
 {
@@ -71,10 +107,6 @@ POST /api/Remove
 	"Content": null
 }
 ```
-
-
-
-
 
 
 
