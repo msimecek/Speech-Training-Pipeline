@@ -173,9 +173,17 @@ The training process uses audio samples along with their respective transcripts 
   * should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/), typically `–`, `‘`, `‚`, `“` etc. (curly characters produced by Microsoft Word)
   * should have the same filename as respective audio file
 
-###Upload to sotrage
-###Paramneters required to start process
-###
+###Upload to storage
+
+The ARM deployment has created a **Storage Account** in Azure for you. What you need to do next is:
+
+* create an `audio` folder and upload all your audio files to it
+* create a `text` folder and upload all transcript files to it
+
+> **Hint**: Use [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/) too manage storage accounts and upload/download files.
+
+###Parameters required to start process
+##
 
 ###Todo
 * Add monitoring solutiuon
