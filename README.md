@@ -183,7 +183,29 @@ The ARM deployment has created a **Storage Account** in Azure for you. What you 
 > **Hint**: Use [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/) too manage storage accounts and upload/download files.
 
 ###Parameters required to start process
-##
+The process is triggered by calling the Submit Logic App with HTTP POST request. [?? How to get URL ??]
+
+Request schema can be found in the definition of the Logic App, sample minimal request is here:
+
+```json
+{
+	"audioBlobLocation": "/files/audio",
+	"textBlobLocation": "/files/text",
+    "containerImage": "msimecek/speech-pipeline:0.16-full",
+    "location": "northeurope",
+    "processName": "process16",
+    "removeSilence": "true",
+    "speechKey": "44564654keykey5465456"
+}
+```
+
+`audioBlobLocation` and `textBlobLocation` should be paths relative to the Storage Account root.
+
+If you don't specify `containerImage`, default will be used (which is the latest image).
+
+`processName` is important, because it identifies this particular pipeline through the whole process. It's also required in different steps.
+
+`speechKey` is required at this moment, but could be added automatically from ARM in the future.
 
 ###Todo
 * Add monitoring solutiuon
