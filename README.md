@@ -59,7 +59,74 @@ Upon provisioning the deployment - the settings of the services can be edited to
 * Storage and blobs
 
 #### Logic Apps
- ** Submit
+ #### The Submit Logic App
+ 
+ This Logic App handles the model deployment and generates URIs for the files in blob storage.
+ 
+ ![Submit Logic App](_images/submit-la.png)
+ 
+ When called from the specified endpoint with given parameters, the logic app generates a URI for the items in blob storage specified with the `audioBlobLocation` and `textBlobLocation` parameters. The logic app then passes the URI alongside various other environement variables to the container, spinning up the process.
+ 
+ *Inputs*
+ ```
+ {
+    "properties": {
+        "audioBlobLocation": {
+            "type": "string"
+        },
+        "chunkLength": {
+            "type": "string"
+        },
+        "cleanUpKey": {
+            "type": "string"
+        },
+        "containerImage": {
+            "type": "string"
+        },
+        "languageModelId": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "processName": {
+            "type": "string"
+        },
+        "removeSilence": {
+            "type": "string"
+        },
+        "resourceGroup": {
+            "type": "string"
+        },
+        "silenceDuration": {
+            "type": "string"
+        },
+        "silenceThreshold": {
+            "type": "string"
+        },
+        "speechEndpoint": {
+            "type": "string"
+        },
+        "speechKey": {
+            "type": "string"
+        },
+        "subscriptionKey": {
+            "type": "string"
+        },
+        "testPercentage": {
+            "type": "string"
+        },
+        "textBlobLocation": {
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
+```
+ *Outputs*
+ 
+ A POST request which initialises the container with the audio files and process name.
+ 
  #### The Enroll Logic App
  
  This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
