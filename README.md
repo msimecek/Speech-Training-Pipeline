@@ -10,8 +10,8 @@ The goal is to simplify data preparation and lower the barrier of entry overall.
 
 ## Installation
 
-*Requirements
-To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the az cli installed - see [Azure Speech CLI](https://github.com/msimecek/Azure-Speech-CLI)
+Requirements:
+To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the `az cli` installed - see [Azure Speech CLI](https://github.com/msimecek/Azure-Speech-CLI)
 
 ### Create Resource Group and Service Principal 
 In this we will be creating the Resource Group and the Service Principal that has the rights to create Azure resources within the provisioned Resource Group. 
@@ -58,7 +58,7 @@ Upon provisioning the deployment - the settings of the services can be edited to
 
 * `Deployment Name`: If multiple instances planned, change to indicate the specific pipeline. This will dynamically change subsequently generated service names to mitigate naming conflicts.
 
-### Components and in depth description (Martin function/container, Craig submit, Speaker Enrol and Id)
+### Components and in depth description
 * Storage and blobs
 
 #### Logic Apps
@@ -334,11 +334,11 @@ etc.
 
 TODO: speaker recognition
 
-##How to use
+## How to use
 
 
 
-###Data Preparation
+### Data Preparation
 
 The training process uses audio samples along with their respective transcripts to create a speech to text model. Before you run start the training process you will need two sets of data:
 
