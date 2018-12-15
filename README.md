@@ -354,16 +354,17 @@ The training process uses audio samples along with their respective transcripts 
   * should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/), typically `–`, `‘`, `‚`, `“` etc. (curly characters produced by Microsoft Word)
   * should have the same filename as respective audio file
 
-###Upload to storage
+### Upload to storage
 
 The ARM deployment has created a **Storage Account** in Azure for you. What you need to do next is:
 
 * create an `audio` folder and upload all your audio files to it
 * create a `text` folder and upload all transcript files to it
+* if a language model file is to be uploaded, rename the file to `language.txt` add to the `text` folder.
 
 > **Hint**: Use [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/) too manage storage accounts and upload/download files.
 
-###Parameters required to start process
+### Parameters required to start process
 The process is triggered by calling the Submit Logic App with HTTP POST request. [?? How to get URL ??]
 
 Request schema can be found in the definition of the Logic App, sample minimal request is here:
@@ -388,7 +389,7 @@ If you don't specify `containerImage`, default will be used (which is the latest
 
 `speechKey` is required at this moment, but could be added automatically from ARM in the future.
 
-###Todo
+### Todo
 * Add monitoring solutiuon
 
 ## Detailed description
