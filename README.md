@@ -2,7 +2,13 @@
 
 We've built this pipeline to simplify the process of preparing and training a speech to text (STT) models for the [Speech Service](https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/overview), which is part of [Microsoft Azure](https://azure.microsoft.com/en-us/).
 
-The goal is to simplify data preparation and lower the barrier of entry overall. With this pipeline developers have to provide only full audio files and full transcripts, along with Speech Service keys, and wait for custom speech model to be created. Additional improvements in quality can be achieved by running multiple iterations.
+The goal is to simplify data preparation and lower the barrier of entry overall as working with speech and video models can be very time consuming.
+
+With this pipeline you need only provide full audio files and full transcripts, along with Speech Service keys, and wait for custom speech model to be created. We will do everything else for you like splitting your file, removing silences, converting your file to efficient sample rates, matching your transcript to Azure Speech Services for self-learning and iterating to train and improve the accoustic and language models.
+
+Additional improvements in quality can be achieved by running multiple iterations. Furthermore, we have included a speaker enrollment and speaker recognition function so that voices can be identified by friendly names. The following components will be deployed to your Azure subscription:
+
+![components]()
 
 ![Developer's view](_images/pipeline-developer-view.png)
 
