@@ -8,7 +8,7 @@ With this pipeline you need only provide full audio files and full transcripts, 
 
 Additional improvements in quality can be achieved by running multiple iterations. Furthermore, we have included a speaker enrollment and speaker recognition function so that voices can be identified by friendly names. The following components will be deployed to your Azure subscription:
 
-![components]()
+![components](https://github.com/msimecek/Speech-Training-Pipeline/blob/master/components.png)
 
 ![Developer's view](_images/pipeline-developer-view.png)
 
@@ -17,7 +17,7 @@ Additional improvements in quality can be achieved by running multiple iteration
 ## Installation
 
 Requirements:
-To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the `az cli` installed - see [Azure Speech CLI](https://github.com/msimecek/Azure-Speech-CLI)
+To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the `az cli` installed - see [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
 
 ### Create Resource Group and Service Principal 
 In this we will be creating the Resource Group and the Service Principal that has the rights to create Azure resources within the provisioned Resource Group. 
@@ -65,9 +65,11 @@ Upon provisioning the deployment - the settings of the services can be edited to
 * `Deployment Name`: If multiple instances planned, change to indicate the specific pipeline. This will dynamically change subsequently generated service names to mitigate naming conflicts.
 
 ### Components and in depth description
-* Storage and blobs
+#### Azure Blob Storage
 
-#### Logic Apps
+A standard LRS Blob storage account will be created with two blob containers, namely media and files. These blobs will be referenced by the Logic Apps
+
+### Logic Apps
 #### The Submit Logic App
 
 This Logic App handles the model deployment and generates URIs for the files in blob storage.
@@ -396,7 +398,7 @@ If you don't specify `containerImage`, default will be used (which is the latest
 `speechKey` is required at this moment, but could be added automatically from ARM in the future.
 
 ### Todo
-* Add monitoring solutiuon
+* Consider adding a monitoring solution
 
 ## Detailed description
 
