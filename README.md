@@ -4,7 +4,7 @@ We've built this pipeline to simplify the process of preparing and training a sp
 
 The goal is to simplify data preparation and lower the barrier of entry overall as working with speech and video models can be very time consuming.
 
-With this pipeline you need only provide full audio files and full transcripts, along with Speech Service keys, and wait for custom speech model to be created. We will do everything else for you like splitting your file, removing silences, converting your file to efficient sample rates, matching your transcript to Azure Speech Services for self-learning and iterating to train and improve the accoustic and language models.
+With this pipeline you only need to provide full audio files and full transcripts, along with Speech Service keys, and wait for custom speech model to be created. We will do everything else for you like splitting your file, removing silences, converting your file to efficient sample rates, matching your transcript to Azure Speech Services for self-learning and iterating to train and improve the accoustic and language models.
 
 Additional improvements in quality can be achieved by running multiple iterations. Furthermore, we have included a speaker enrollment and speaker recognition function so that voices can be identified by friendly names. The following components will be deployed to your Azure subscription:
 
@@ -313,6 +313,8 @@ First get your Speech key from the Azure Portal
 
 ![Azure Portal, speech keys](_images/portal-key.png)
 
+You can also get your keys by running the script [SpeechPipelineUtils.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/SpeechPipelineUtils.sh).
+
 Then navigate to https://cris.ai, sign in and connect your subscription. If your Speech service wasn't provisioned in the US, add your region to the URL (such as https://northeurope.cris.ai).
 
 ![Connect existing subscription to CRIS](_images/cris-connect.png)
@@ -339,12 +341,6 @@ speech endpoint list
 speech transcript list
 etc.
 ```
-
-TODO: speaker recognition
-
-## How to use
-
-
 
 ### Data Preparation
 
@@ -398,12 +394,7 @@ If you don't specify `containerImage`, default will be used (which is the latest
 `speechKey` is required at this moment, but could be added automatically from ARM in the future.
 
 ### Todo
-* Consider adding a monitoring solution
-
-## Detailed description
-
-TBD
-
+* Consider adding a monitoring solution - for example, you can use the Log Analytics Send step within the Logic Apps to track the job steps. There is also a Logic Apps Management workspace solution that you can import into Log Analytics to capture operational traces.
 
 ## References
 
