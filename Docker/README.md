@@ -1,6 +1,6 @@
 # Speech Training Pipeline for Docker
 
-![Background view of the speech processing pipeline](../../../../2018-09%20BT%20Sport/Code/Speech-Training-Pipeline/_images/pipeline-background-view.png)
+![Background view of the speech processing pipeline](../_images/pipeline-background-view.png)
 
 ## Prerequisites
 
