@@ -19,7 +19,8 @@ Additional improvements in quality can be achieved by running multiple iteration
 Requirements:
 To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the `az cli` installed - see [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
 
-### Create Resource Group and Service Principal 
+### Create Resource Group and Service Principal
+
 In this we will be creating the Resource Group and the Service Principal that has the rights to create Azure resources within the provisioned Resource Group. 
 
 1) Log in to the az cli
@@ -64,13 +65,15 @@ Upon provisioning the deployment - the settings of the services can be edited to
 
 * `Deployment Name`: If multiple instances planned, change to indicate the specific pipeline. This will dynamically change subsequently generated service names to mitigate naming conflicts.
 
-### Components and in depth description
-#### Azure Blob Storage
+## Components and in depth description
+
+### Azure Blob Storage
 
 A standard LRS Blob storage account will be created with two blob containers, namely media and files. These blobs will be referenced by the Logic Apps
 
-#### Logic Apps
-##### The Submit Logic App
+### Logic Apps
+
+#### The Submit Logic App
 
 This Logic App handles the model deployment and generates URIs for the files in blob storage.
 
@@ -138,7 +141,7 @@ This Logic App handles the model deployment and generates URIs for the files in 
 
  A POST request which initialises the container with the audio files and process name.
 
- ##### The Enroll Logic App
+ #### The Enroll Logic App
 
  This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
 
@@ -177,7 +180,7 @@ The enrollment service will return a GUID upon successful registration and the L
 
  The logic app will output the GUID from the enrollment service and write a GUID/Speaker reference blob to storage.
 
-##### The Recognise Logic App
+#### The Recognise Logic App
 
  This Logic App will recognise a speaker by using a short clip of a voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information  
 
@@ -212,7 +215,7 @@ The recognise service will return a GUID upon successful identification and the 
 
 The name of the speaker as retrieved from the blob storage file matching the speaker GUID
 
-####  Function App (Pipeline Manager)
+###  Function App (Pipeline Manager)
 
 Pipeline container is provisioned on-demand when the process is initiated and after input files are processed. Container provisioning is represented by an HTTP POST call to an Azure Function, which is deployed [from GitHub repo](https://github.com/msimecek/Pipeline-Manager).
 
@@ -297,7 +300,7 @@ Our test runs show that optimal amount of container RAM is 3.5 GB with CPU count
 }
 ```
 
-#### Cognitive Services
+### Cognitive Services
 
 As the name suggests the speech training pipeline works with speech-related services. Specifically [Speech](https://azure.microsoft.com/en-us/services/cognitive-services/speech-to-text/) service and [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) service. Both are part of [Azure Cognitive Services](https://azure.microsoft.com/en-us/services/cognitive-services/?v=18.44b), a set of RESTful APIs which are easy to integrate into any application.
 
