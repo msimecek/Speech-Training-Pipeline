@@ -58,7 +58,7 @@ If at any time you need to get the values of the Service Principal, you can simp
  <img src="http://armviz.io/visualizebutton.png"/>
 </a>
 
-The <b>deploy button</b> above automatically provisions the needed Azure services for the Custom Speech processing pipeline from an ARM template. The <b>visualise button</b> above displays a visual representation of the services that are to be provisioned from the template.
+The <b>deploy button</b> above automatically provisions the needed Azure services for the Speech training pipeline from an ARM template. The <b>visualise button</b> above displays a visual representation of the services that are to be provisioned from the template.
 
 Upon provisioning the deployment - the settings of the services can be edited to better reflect meaningful identifiers within your specific use case. 
 
