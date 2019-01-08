@@ -65,7 +65,7 @@ Upon provisioning the deployment - the settings of the services can be edited to
 * `Deployment Name`: If multiple instances planned, change to indicate the specific pipeline. This will dynamically change subsequently generated service names to mitigate naming conflicts.
 
 ### Components and in depth description
-##### Azure Blob Storage
+#### Azure Blob Storage
 
 A standard LRS Blob storage account will be created with two blob containers, namely media and files. These blobs will be referenced by the Logic Apps
 
@@ -212,7 +212,7 @@ The recognise service will return a GUID upon successful identification and the 
 
 The name of the speaker as retrieved from the blob storage file matching the speaker GUID
 
-#####  Function App (Pipeline Manager)
+####  Function App (Pipeline Manager)
 
 Pipeline container is provisioned on-demand when the process is initiated and after input files are processed. Container provisioning is represented by an HTTP POST call to an Azure Function, which is deployed [from GitHub repo](https://github.com/msimecek/Pipeline-Manager).
 
@@ -297,7 +297,7 @@ Our test runs show that optimal amount of container RAM is 3.5 GB with CPU count
 }
 ```
 
-##### Cognitive Services
+#### Cognitive Services
 
 As the name suggests the speech training pipeline works with speech-related services. Specifically [Speech](https://azure.microsoft.com/en-us/services/cognitive-services/speech-to-text/) service and [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) service. Both are part of [Azure Cognitive Services](https://azure.microsoft.com/en-us/services/cognitive-services/?v=18.44b), a set of RESTful APIs which are easy to integrate into any application.
 
@@ -393,7 +393,7 @@ If you don't specify `containerImage`, default will be used (which is the latest
 
 `speechKey` is required at this moment, but could be added automatically from ARM in the future.
 
-### Todo
+## Todo
 * Consider adding a monitoring solution - for example, you can use the Log Analytics Send step within the Logic Apps to track the job steps. There is also a Logic Apps Management workspace solution that you can import into Log Analytics to capture operational traces.
 
 ## References
