@@ -296,7 +296,7 @@ if ($testPercentage -gt 0) {
 
     # Create test for the model.
     Set-SegmentStart -Name "Test"
-    & /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --wait
+    & /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --language-model $languageModelId --wait
     Write-SegmentDuration -Name "Test"
 }
 

@@ -6,7 +6,8 @@ if (Test-Path "SpeechCLI") {
 $currentDir = (Get-Item -Path ".\" -Verbose).FullName
 
 Write-Host "Downloading Speech CLI for Ubuntu."
-Invoke-WebRequest -Uri "https://martinovo.blob.core.windows.net/speech/ubuntu-x64-latest.zip" -OutFile "$currentDir/speech-cli.zip"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+Invoke-WebRequest -Uri "https://github.com/msimecek/Azure-Speech-CLI/releases/download/1.1.0/ubuntu-x64-1.1.0.zip" -OutFile "$currentDir/speech-cli.zip"
 
 Write-Host "Unpacking Speech CLI."
 Add-Type -Assembly System.IO.Compression.FileSystem
