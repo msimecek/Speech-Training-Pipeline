@@ -8,7 +8,7 @@ With this pipeline you only need to provide full audio files and full transcript
 
 Additional improvements in quality can be achieved by running multiple iterations. Furthermore, we have included a speaker enrollment and speaker recognition function so that voices can be identified by friendly names. The following components will be deployed to your Azure subscription:
 
-![components](https://github.com/msimecek/Speech-Training-Pipeline/blob/master/components.png)
+![components](_images/components.png)
 
 ![Developer's view](_images/pipeline-developer-view.png)
 
