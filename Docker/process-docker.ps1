@@ -117,7 +117,6 @@ $rootDir = (Get-Item -Path ".\" -Verbose).FullName;
 Set-SegmentStart -Name "MainProcess" # measurements
 Set-SegmentStart -Name "ToolsInit"
 
-
 # Test tools.
 Write-Host "Checking dependencies."
 pip3 --version
@@ -134,29 +133,32 @@ Write-SegmentDuration -Name "ToolsInit"
 
 # Parse source files into arrays and remove empty lines. Each line is expected to be a file URL.
 Write-Host "Downloading source files."
-$sourceWavs = @()
-$sourceTxts = @()
-
 Set-SegmentStart -Name "SourceDownload"
 
-$sourceWavs += (Invoke-WebRequest $audioFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\n' | ? {$_}
-$sourceTxts += (Invoke-WebRequest $transcriptFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\n' | ? {$_}
+$sourceWavs = @{}
+(Invoke-WebRequest $audioFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\r\n' | Where-Object {$_} | % { $sourceWavs.Add([System.IO.Path]::GetFileNameWithoutExtension($_), $_) }
+
+$sourceTxts = @{}
+(Invoke-WebRequest $transcriptFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\r\n' | Where-Object {$_} | % { $sourceTxts.Add([System.IO.Path]::GetFileNameWithoutExtension($_), $_) }
 
 # Download WAV files locally
 New-Item $rootDir/SourceWavs -ItemType Directory -Force
 
-# Inline syntax
-#$sourceWavs | % {$i = 0} { Invoke-WebRequest $_ -OutFile .\SourceWavs\$i.wav; $i++ }
-
-for ($i = 0; $i -lt $sourceWavs.Count; $i++) {  
-    # Download WAV file locally to prevent Storage transfer errors    
-    Write-Host "($($i + 1)/$($sourceWavs.Count)) Downloading source WAV locally."
+foreach ($wav in $sourceWavs.Keys) 
+{
+    if (!($sourceTxts.ContainsKey($wav)))
+    {
+        Throw "The transcript file for $wav was not found in the list. Audio and transcript files are matched by filename (without extension)."
+    }
     
-    Set-SegmentStart -Name "FileDownload-$i.wav"
-    Invoke-WebRequest $sourceWavs[$i] -OutFile ./SourceWavs/$i.wav
-    Write-SegmentDuration -Name "FileDownload-$i.wav"
+    # Download WAV file locally to prevent Storage transfer errors    
+    Write-Host "($wav) Downloading source media locally."
+    
+    Set-SegmentStart -Name "FileDownload-$wav"
+    Invoke-WebRequest $sourceWavs[$wav] -OutFile $rootDir/SourceWavs/$wav # extension omitted - doesn't have to be WAV at this point
+    Write-SegmentDuration -Name "FileDownload-$wav"
 
-    New-Item ./Chunks-$i -ItemType Directory -Force
+    New-Item $rootDir/Chunks-$wav -ItemType Directory -Force
 
     # Run FFmpeg on source files - chunk & convert
     if (!($null -eq $removeSilence))
@@ -164,32 +166,33 @@ for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
         $audioFilters = "-af silenceremove=stop_periods=-1:stop_duration=$($silenceDuration):stop_threshold=-$($silenceThreshold)dB"
     }
     
-    $command = "ffmpeg -i $rootDir/SourceWavs/$i.wav -acodec pcm_s16le -vn -ar 16000 $audioFilters -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$i/$i-part%03d.wav"
-    Set-SegmentStart -Name "ffmpeg-$i.wav"
+    $command = "ffmpeg -i $rootDir/SourceWavs/$wav -acodec pcm_s16le -vn -ar 16000 $audioFilters -f segment -segment_time $chunkLength -ac 1 $rootDir/Chunks-$wav/$wav-part%03d.wav"
+    Set-SegmentStart -Name "ffmpeg-$wav"
     Invoke-Expression -Command $command
-    Write-SegmentDuration -Name "ffmpeg-$i.wav"
+    Write-SegmentDuration -Name "ffmpeg-$wav"
         
     # Download full transcript
-    Invoke-WebRequest $sourceTxts[$i] -OutFile $rootDir/$processName-source-transcript-$i.txt
+    Invoke-WebRequest $sourceTxts[$wav] -OutFile $rootDir/$processName-source-transcript-$wav.txt
 
-    [byte[]]$byte = Get-Content -ReadCount 4 -TotalCount 4 -Path "$rootDir/$processName-source-transcript-$i.txt" -AsByteStream
+    [byte[]]$byte = Get-Content -ReadCount 4 -TotalCount 4 -Path "$rootDir/$processName-source-transcript-$wav.txt" -AsByteStream
     if (!($byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf))
     { 
-        Throw "source-transcript-$i.txt is not encoded in 'UTF-8 Signature'."
+        Throw "$processName-source-transcript-$wav.txt is not encoded in 'UTF-8 Signature'."
     }
 
     # Replace non-supported Unicode characters (above U+00A1) with ASCII variants.
-    (Get-Content "$rootDir/$processName-source-transcript-$i.txt") `
+    (Get-Content "$rootDir/$processName-source-transcript-$wav.txt") `
         -Replace "\u2019","'" -Replace "\u201A","," `
         -Replace "\u2013","-" -Replace "\u2012","-" `
         -Replace "\u201C",'"' -Replace "\u201D",'"' `
-        | Out-File "$rootDir/$processName-source-transcript-$i.txt"
+        | Out-File "$rootDir/$processName-source-transcript-$wav.txt"
 }
 
 Write-SegmentDuration -Name "SourceDownload"
 
 # If language data provided, create language model.
-if (!($null -eq $languageModelFile)) {
+if (!($null -eq $languageModelFile)) 
+{
     Set-SegmentStart -Name "CreateLanguageModel"
     Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
     
@@ -202,7 +205,8 @@ if (!($null -eq $languageModelFile)) {
 
 
 # If baseline endpoint not provided, create one with baseline models first.
-if ($null -eq $speechEndpoint) {
+if ($null -eq $speechEndpoint) 
+{
     Set-SegmentStart -Name "CreateBaselineEndpoint"
     # Is there a language model present? If not, use the baseline model.
     if ($null -eq $languageModelFile -and $null -eq $languageModelId) {
@@ -220,9 +224,13 @@ if ($null -eq $speechEndpoint) {
 cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher
 
 Set-SegmentStart -Name "Batcher"
-for ($i = 0; $i -lt $sourceWavs.Count; $i++) {
-    If (!(Test-Path "$rootDir/$processName-machine-transcript-$i.txt")) {
-       node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/Chunks-$i" --output "$rootDir/$processName-machine-transcript-$i.txt"
+foreach ($wav in $sourceWavs.Keys) 
+{
+    if (!(Test-Path "$rootDir/$processName-machine-transcript-$wav.txt")) 
+    {
+       node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/Chunks-$wav" --output "$rootDir/$processName-machine-transcript-$wav.txt"
+       
+       Get-Content "$rootDir/$processName-source-transcript-$wav.txt" | Set-Content -Encoding UTF8 "$rootDir/$processName-source-transcript-$wav.txt"
     }
 }
 Write-SegmentDuration -Name "Batcher"
@@ -235,29 +243,30 @@ New-Item $rootDir/$processName-Compiled -ItemType Directory -Force
 
 Set-SegmentStart -Name "Transcriber"
 $cleaned = @()
-for ($i = 0; $i -lt $sourceWavs.Count; $i++) 
+foreach ($wav in $sourceWavs.Keys)
 {
     # TODO: exclude from loop, when machine transcript empty
-    Set-SegmentStart -Name "TranscriberFile-$i"
+    Set-SegmentStart -Name "TranscriberFile-$wav"
 
     # python transcriber.py -t '11_WTA_ROM_STEPvGARC_2018/11_WTA_ROM_STEPvGARC_2018.txt' -a '11_WTA_ROM_STEPvGARC_2018/11_WTA_ROM_STEPvGARC_OFFSET.txt' -g '11_WTA_ROM_STEPvGARC_TRANSCRIPT_testfunc2.txt'
     # -t = TRANSCRIBED_FILE = official full transcript
     # -a = audio processed file = output from batcher
     # -g = output file
-    python3 transcriber.py -t "$rootDir/$processName-source-transcript-$i.txt" -a "$rootDir/$processName-machine-transcript-$i.txt" -g "$rootDir/$processName-matched-transcript-$i.txt"
-    Write-SegmentDuration -Name "TranscriberFile-$i"
+    python3 transcriber.py -t "$rootDir/$processName-source-transcript-$wav.txt" -a "$rootDir/$processName-machine-transcript-$wav.txt" -g "$rootDir/$processName-matched-transcript-$wav.txt"
+    Write-SegmentDuration -Name "TranscriberFile-$wav"
 
     # Cleanup (remove NEEDS MANUAL CHECK and files which don't have transcript)
-    Set-SegmentStart -Name "CleanupFile-$i"
-    $present = Get-Content -Path "$rootDir/$processName-matched-transcript-$i.txt" | Where-Object {$_ -notlike "*NEEDS MANUAL CHECK*"}
+    Set-SegmentStart -Name "CleanupFile-$wav"
+    $present = Get-Content -Path "$rootDir/$processName-matched-transcript-$wav.txt" | Where-Object {$_ -notlike "*NEEDS MANUAL CHECK*"}
     
-    ForEach ($line in $present) {
+    foreach ($line in $present) 
+    {
         $filename = ($line -split '\t')[0]
-        Copy-Item -Path "$rootDir/Chunks-$i/$filename" -Destination "$rootDir/$processName-Cleaned/$filename" # copy all to one place
+        Copy-Item -Path "$rootDir/Chunks-$wav/$filename" -Destination "$rootDir/$processName-Cleaned/$filename" # copy all to one place
     }
 
     $cleaned += $present
-    Write-SegmentDuration -Name "CleanupFile-$i"
+    Write-SegmentDuration -Name "CleanupFile-$wav"
 }
 
 Write-Host "Transcribe done. Writing cleaned-transcript.txt"
@@ -268,7 +277,8 @@ Write-SegmentDuration -Name "Transcriber"
 Write-Host "Compiling audio and transcript files."
 Set-SegmentStart -Name "SpeechCompile"
 
-if ($cleaned.Length * ($testPercentage / 100) -lt 1) {
+if ($cleaned.Length * ($testPercentage / 100) -lt 1) 
+{
     Write-Host "Not enough files to populate the test dataset. Only training dataset will be created."
     $testPercentage = 0
 }
@@ -288,7 +298,8 @@ Set-SegmentStart -Name "AcousticModelTrain"
 $model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale $locale --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 Write-SegmentDuration -Name "AcousticModelTrain"
 
-if ($testPercentage -gt 0) {
+if ($testPercentage -gt 0) 
+{
     # Create test acoustic datasets for testing.
     Set-SegmentStart -Name "AcousticModelTest"
     $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --locale $locale --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
@@ -308,7 +319,8 @@ Write-SegmentDuration -Name "Endpoint"
 Write-Host "Process done."
 Write-SegmentDuration -Name "MainProcess"
 
-if (!($null -eq $webhookUrl)) {
+if (!($null -eq $webhookUrl)) 
+{
     $content = @{
         ProcessName = $processName;
         Errors = $Error;
