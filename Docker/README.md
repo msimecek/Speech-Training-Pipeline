@@ -16,8 +16,6 @@ To use this pipeline and get a trained speech endpoint in the end, you have to:
 ### 1. Data preparation
 
 > **Important:** Keep on mind that all TXT files should be encoded as UTF-8 BOM and should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/). These are typically `–`, `‘`, `‚`, `“` etc.
->
-> We're planning to add validations/converters into the process itself.
 
 **Prepare source audio/video recordings.** We usually use WAVs, but technically they can be any audio/video files as long as *ffmpeg* is able to process them. You can use multiple files and each of them can be hours long. We recommend total length no less than 4-5 hours.
 
@@ -38,19 +36,19 @@ To use this pipeline and get a trained speech endpoint in the end, you have to:
 
 ```
 https://pokus.blob.core.windows.net/speech/01.wav
-https://pokus.blob.core.windows.net/speech/lDZq53Ri7Xs5dbHStvVq4A.wav?st=2018-10-05T09%3A34%3A30Z&se=2018-11-06T08%3A34%3A00Z&sp=rwl&sv=2018-03-28&sr=c&sig=X0g1HeF0abcde4NaZbaasds39yytpMkQwRdcasdxLyE0%3D
-https://pokus.blob.core.windows.net/speech/AA.wav
+https://pokus.blob.core.windows.net/speech/02.wav?st=2018-10-05T09%3A34%3A30Z&se=2018-11-06T08%3A34%3A00Z&sp=rwl&sv=2018-03-28&sr=c&sig=X0g1HeF0abcde4NaZbaasds39yytpMkQwRdcasdxLyE0%3D
+https://pokus.blob.core.windows.net/speech/03.wav
 ```
 
 *sample-transcripts.txt*
 
 ```
 https://pokus.blob.core.windows.net/speech/01.txt
-https://pokus.blob.core.windows.net/speech/02.txt
 https://pokus.blob.core.windows.net/speech/03.txt
+https://pokus.blob.core.windows.net/speech/02.txt
 ```
 
-*(Note that file names don't need to correlate, only order matters.)*
+*(Files are matched on filename, so order doesn't matter, but filename - without extension - does.)*
 
 **Upload list files to an accessible location too.** The process will download them.
 
@@ -75,6 +73,8 @@ It is configured with environmental variables.
 | `removeSilence`       | string        | (Optional) If specified, the process will try to remove silence from original audio. Default = $null | "true"                                       |
 | `silenceDuration`     | int           | (Optional) Duration of silence (in seconds) that must exist before audio is not copied any more. Default = 1 | 1                                            |
 | `silenceThreshold`    | int           | (Optional) Sample value that should be treated as silence (in dB). Default = 50 decibels. | 50                                           |
+| `webhookUrl`    | string           | (Optional) URL of an endpoint to be called when the process finishes with a POST request. | https://sample.net/done                                     |
+| `webhookContent`    | string           | (Optional) Custom content to be added to the webhook call. This value will be in the `Content` property of JSON object. | "Hello"                                           |
 
 There are currently three ways of running the process.
 
@@ -85,7 +85,7 @@ Most convenient. Use Docker locally or [Azure Container Instances](https://azure
 *Locally:*
 
 ```
-docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e audioFilesList='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e transcriptFilesList='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e languageModelFile='https://pokus.blob.core.windows.net/speech/language.txt' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.14-full 
+docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e audioFilesList='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e transcriptFilesList='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e languageModelFile='https://pokus.blob.core.windows.net/speech/language.txt' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.18-full 
 ```
 
 *Azure Container Instances:*
@@ -93,17 +93,10 @@ docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e audioF
 ```
 az group create -n SpeechPipeline -l northeurope
 
-az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.14-full --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "audioFilesList"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "transcriptFilesList"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "languageModelFile"="https://pokus.blob.core.windows.net/speech/language.txt" "speechKey"="<KEY>" "speechRegion"="<REGION>"
+az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.18-full --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "audioFilesList"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "transcriptFilesList"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "languageModelFile"="https://pokus.blob.core.windows.net/speech/language.txt" "speechKey"="<KEY>" "speechRegion"="<REGION>"
 
 az container attach -n speechjob -g SpeechPipeline
 ```
-
-There are two images available: **-light** and **-full**.
-
-* `light` image contains only low-level libraries and downloads some dependencies while running. This image is smaller, but the whole process takes longer.
-* `full` image contains all dependencies. It's larger in size, but takes shorter to run. Also equals to `latest`.
-
-> If you're not constrained by image size, use **full/latest** image.
 
 #### PowerShell
 

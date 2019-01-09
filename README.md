@@ -359,7 +359,7 @@ The training process uses audio samples along with their respective transcripts 
   * needs to be plain text (TXT)
   * needs to be encoded as UTF-8 BOM
   * should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/), typically `–`, `‘`, `‚`, `“` etc. (curly characters produced by Microsoft Word)
-  * should have the same filename as respective audio file
+  * needs to have the same filename as respective audio file
 
 ### Upload to storage
 
