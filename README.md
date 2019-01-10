@@ -131,7 +131,7 @@ The ARM deployment has created a **Storage Account** in Azure for you. What you 
 
 ![Audio and text folders in Azure Storage](_images/files-on-storage.png)
 
-#### Parameters required to start process
+#### Start process
 
 The process is triggered by calling the Submit Logic App with **HTTP POST** request. You can find the URL in Azure Portal - find the logic app, go to the **Overview** section, click **See trigger history** and copy the **Callback URL**.
 
@@ -166,6 +166,10 @@ Submitted process process16
 ```
 
 This means that the process has started. It will take several hours to complete.
+
+#### Process end
+
+Once the process finishes, the container instance is automatically removed.
 
 ### Troubleshooting
 
