@@ -14,18 +14,26 @@ Additional improvements in quality can be achieved by running multiple iteration
 
 **This README is work in progress. Bear with us until we finish it :)**
 
-## Installation
+## How to use
 
-Requirements:
-To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the `az cli` installed - see [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
+Before you can use the pipeline, you have to provision all necessary resources in your Azure subscription. There are two steps required:
+
+1. Create Resource Group and Service Principal in Azure
+2. Deploy Azure Resource Manager template to the Resource Group
 
 ### Create Resource Group and Service Principal
 
 In this we will be creating the Resource Group and the Service Principal that has the rights to create Azure resources within the provisioned Resource Group. 
 
-1) Log in to the az cli
-2) Run script [createRGandSP.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/createRGandSP.sh)
-3) Copy the values output by the script as you will need them in the ARM deploy step
+There are two ways: **Bash script** or **Azure Portal**.
+
+#### Bash
+
+> **Requirements:** To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) installed.
+
+1. Log in to the Azure CLI
+2. Run script [createRGandSP.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/createRGandSP.sh)
+3. Copy the values output by the script as you will need them in the ARM deploy step
 
 The output should look like the following:
 
@@ -49,6 +57,31 @@ SP key 62a************************
 
 If at any time you need to get the values of the Service Principal, you can simply run the script [SpeechPipelineUtils.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/SpeechPipelineUtils.sh) although this is best run after the Deploy from ARM step.
 
+#### Azure Portal
+
+Alternatively, you can create both the Resource Group and Service Principal through the [Azure management portal](https://portal.azure.com). Choose the **Contributor** role for the principal.
+
+1. Log in to https://portal.azure.com
+2. Make sure you are in the right subscription
+3. Go to **All services**
+4. Find **Azure Active Directory**
+5. Go to **App registrations**
+6. Click **+ New application registration**
+7. Choose a **name** for your application (service principal), keep **Web app / API** as the application type and enter **any valid URL** into the Sign-on URL field
+8. Click **Create** and wait for the application to be created
+9. Once it's done, open the registered app, copy the **Application ID** value and store it somewhere
+10. Click **Settings**
+11. Select **Keys** and create new key in the **Passwords** section
+12. After you click **Save** new password will be generated - **store it somewhere** to be able to use it later
+13. Create **new Resource Group**
+14. Go to the group and select **Access Control (IAM)** from the menu
+15. Click **+ Add role assignment**
+16. Select **Contributor** as role
+17. Use the **Select** field to search for your service principal (application created before)
+18. Confirm by clicking **Save**
+
+Now you have both the Application ID and password (key) for the Service Principal.
+
 ### Deploy to Azure
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmsimecek%2FSpeech-Training-Pipeline%2Fmaster%2FARM%2FSpeechPipeline.json" target="_blank">
@@ -65,6 +98,10 @@ Upon provisioning the deployment - the settings of the services can be edited to
 
 * `Deployment Name`: If multiple instances planned, change to indicate the specific pipeline. This will dynamically change subsequently generated service names to mitigate naming conflicts.
 
+### Use the pipeline
+
+ABCD
+
 ## Components and in depth description
 
 ### Azure Blob Storage
@@ -73,77 +110,41 @@ A standard LRS Blob storage account will be created with two blob containers, na
 
 ### Logic Apps
 
+We use Azure Logic Apps to orchestrate the process. They're invoked by HTTP request with parameters in JSON body.
+
 #### The Submit Logic App
 
 This Logic App handles the model deployment and generates URIs for the files in blob storage.
 
  ![Submit Logic App](_images/submit-la.png)
 
- When called from the specified endpoint with given parameters, the logic app generates a URI for the items in blob storage specified with the `audioBlobLocation` and `textBlobLocation` parameters. The logic app then passes the URI alongside various other environment variables to the container, spinning up the process.
+When called from the specified endpoint with given parameters, the logic app generates a URI for the items in blob storage specified with the `audioBlobLocation` and `textBlobLocation` parameters. The logic app then passes the URI alongside various other environment variables to the container, spinning up the process.
 
- *Inputs*
- ```
- {
-    "properties": {
-        "audioBlobLocation": {
-            "type": "string"
-        },
-        "chunkLength": {
-            "type": "string"
-        },
-        "cleanUpKey": {
-            "type": "string"
-        },
-        "containerImage": {
-            "type": "string"
-        },
-        "languageModelId": {
-            "type": "string"
-        },
-        "location": {
-            "type": "string"
-        },
-        "processName": {
-            "type": "string"
-        },
-        "removeSilence": {
-            "type": "string"
-        },
-        "resourceGroup": {
-            "type": "string"
-        },
-        "silenceDuration": {
-            "type": "string"
-        },
-        "silenceThreshold": {
-            "type": "string"
-        },
-        "speechEndpoint": {
-            "type": "string"
-        },
-        "speechKey": {
-            "type": "string"
-        },
-        "subscriptionKey": {
-            "type": "string"
-        },
-        "testPercentage": {
-            "type": "string"
-        },
-        "textBlobLocation": {
-            "type": "string"
-        }
-    },
-    "type": "object"
+*Sample request*
+
+```json
+{
+	"audioBlobLocation": "/files/audio",
+	"textBlobLocation": "/files/text",
+    "containerImage": "msimecek/speech-pipeline:0.18-full",
+    "location": "northeurope",
+    "speechKey": "aaabbbcccddddeeee",
+    "processName": "process16",
+    "removeSilence": "true",
+    "testPercentage": "10",
+    "chunkLength": "10"
 }
- ```
- *Outputs*
+```
 
- A POST request which initialises the container with the audio files and process name.
+Full list of inputs can be found [in the ARM template](https://github.com/msimecek/Speech-Training-Pipeline/blob/4a0d0ca430a49b5ceb7622ff6ce0523ae3195058/ARM/SpeechPipeline.json#L731).
+
+*Outputs*
+
+A POST request which initialises the container with the audio files and process name.
 
  #### The Enroll Logic App
 
- This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
+This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
 
 ![enroll](_images/enrolllogicapp.png)
 
@@ -175,14 +176,13 @@ The enrollment service will return a GUID upon successful registration and the L
 }
 ```
 
-
 *Outputs*
 
- The logic app will output the GUID from the enrollment service and write a GUID/Speaker reference blob to storage.
+The logic app will output the GUID from the enrollment service and write a GUID/Speaker reference blob to storage.
 
 #### The Recognise Logic App
 
- This Logic App will recognise a speaker by using a short clip of a voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information  
+This Logic App will recognise a speaker by using a short clip of a voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information  
 
  ![RecogniseLogicApp](_images/recogniselogicapp.png)
 
@@ -217,7 +217,9 @@ The name of the speaker as retrieved from the blob storage file matching the spe
 
 ###  Function App (Pipeline Manager)
 
-Pipeline container is provisioned on-demand when the process is initiated and after input files are processed. Container provisioning is represented by an HTTP POST call to an Azure Function, which is deployed [from GitHub repo](https://github.com/msimecek/Pipeline-Manager).
+The training pipeline itself is a Docker container and we run it on demand in [Azure Container Instances](https://azure.microsoft.com/en-us/services/container-instances/).
+
+Pipeline container is provisioned when the process is initiated and after input files are processed. Container provisioning is represented by an HTTP POST call to an Azure Function, which is deployed [from GitHub repo](https://github.com/msimecek/Pipeline-Manager).
 
 This Function App is fairly simple - it uses Azure Management NuGet package (`Microsoft.Azure.Management.Fluent`) to create and remove Container Groups in the same Resource Group where the whole process runs.
 
