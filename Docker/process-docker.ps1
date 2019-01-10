@@ -135,11 +135,12 @@ Write-SegmentDuration -Name "ToolsInit"
 Write-Host "Downloading source files."
 Set-SegmentStart -Name "SourceDownload"
 
+# TODO: convert CRLF
 $sourceWavs = @{}
-(Invoke-WebRequest $audioFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\r\n' | Where-Object {$_} | % { $sourceWavs.Add([System.IO.Path]::GetFileNameWithoutExtension($_), $_) }
+(Invoke-WebRequest $audioFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\n' | Where-Object {$_} | % { $sourceWavs.Add([System.IO.Path]::GetFileNameWithoutExtension($_), $_) }
 
 $sourceTxts = @{}
-(Invoke-WebRequest $transcriptFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\r\n' | Where-Object {$_} | % { $sourceTxts.Add([System.IO.Path]::GetFileNameWithoutExtension($_), $_) }
+(Invoke-WebRequest $transcriptFilesList -ErrorAction Stop | Select -ExpandProperty Content) -Split '\n' | Where-Object {$_} | % { $sourceTxts.Add([System.IO.Path]::GetFileNameWithoutExtension($_), $_) }
 
 # Download WAV files locally
 New-Item $rootDir/SourceWavs -ItemType Directory -Force
