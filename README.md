@@ -175,11 +175,14 @@ Is there a new resource in your Resource Group with the name of your `processNam
 2. Verify that the Application Settings in the Function App were propagated correctly (`AzureTenantId`, `Location`, `PrincipalAppId`, `PrincipalAppSecret`, `ResourceGroupName`).
 3. Check that you uploaded both the audio and transcript files in correct Storage folders.
 
-If the container was started, but you don't see any speech models on the CRIS portal, check logs on the container. 
+If the container was started, but you don't see any speech models on the CRIS portal, check logs on the container.
 
 ```
 az container logs -g resourcegroupname -n process16
 ```
+
+1. Make sure that you use the correct Speech service key.
+2. Make sure that you specified the right region when you started the Logic App (parameter `location` needs to be the same as your Speech service's location).
 
 ## Components and in depth description
 
