@@ -16,10 +16,11 @@ Additional improvements in quality can be achieved by running multiple iteration
 
 ## How to use
 
-Before you can use the pipeline, you have to provision all necessary resources in your Azure subscription. There are two steps required:
+Before you can use the pipeline, you have to provision all necessary resources in your Azure subscription.
 
-1. Create Resource Group and Service Principal in Azure
-2. Deploy Azure Resource Manager template to the Resource Group
+1. [Create Resource Group and Service Principal](#create-resource-group-and-service-principal)
+2. [Deploy required resources to Azure](#deploy-to-azure)
+3. [Use the pipeline](#use-the-pipeline)
 
 ### Create Resource Group and Service Principal
 
@@ -80,7 +81,7 @@ Alternatively, you can create both the Resource Group and Service Principal thro
 17. Use the **Select** field to search for your service principal (application created before)
 18. Confirm by clicking **Save**
 
-Now you have both the Application ID and password (key) for the Service Principal.
+Now you have both the application ID and password (key) for the Service Principal.
 
 ### Deploy to Azure
 
@@ -92,7 +93,7 @@ Now you have both the Application ID and password (key) for the Service Principa
  <img src="http://armviz.io/visualizebutton.png"/>
 </a>
 
-The <b>deploy button</b> above automatically provisions the needed Azure services for the Speech training pipeline from an ARM template. The <b>visualise button</b> above displays a visual representation of the services that are to be provisioned from the template.
+The <b>deploy button</b> above automatically provisions the needed Azure services for the Speech training pipeline from an [ARM template](https://github.com/msimecek/Speech-Training-Pipeline/blob/master/ARM/SpeechPipeline.json). The <b>visualise button</b> above displays a visual representation of the services that are to be provisioned from the template.
 
 Upon provisioning the deployment - the settings of the services can be edited to better reflect meaningful identifiers within your specific use case. 
 
@@ -100,7 +101,85 @@ Upon provisioning the deployment - the settings of the services can be edited to
 
 ### Use the pipeline
 
-ABCD
+With the infrastructure provisioned, you will need to upload training files to Blob Storage and call the Submit Logic App.
+
+#### Prepare data
+
+The training process uses audio samples along with their respective transcripts to train the speech to text model. Before you start the training process you will need two sets of data:
+
+* **Audio** - should be full audio recordings that you want to use for training. 
+  * can be multiple files (for example several sports matches)
+  * can be in any of the common formats (WAV, MP3, MP4...)
+  * can be audio-only or with video (visual part will be ignored during the process)
+  * should represent the audio environment in which the model will be used (that is with background noise, difficult accents etc.)
+  * recommended total length is no less than 3 hours
+* **Transcripts** - should be full transcript of each of the audio files.
+  * needs to be plain text (TXT)
+  * needs to be encoded as UTF-8 BOM
+  * should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/), typically `–`, `‘`, `‚`, `“` etc. (curly characters produced by Microsoft Word)
+  * needs to have the same filename as respective audio file
+
+#### Upload to storage
+
+The ARM deployment has created a **Storage Account** in Azure for you. What you need to do next is:
+
+* create an `audio` folder and upload all your audio files to it
+* create a `text` folder and upload all transcript files to it
+* if a language model file will be used, rename it to `language.txt` and add it to the `text` folder
+
+> **Hint**: Use [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/) to manage storage accounts and upload/download files.
+
+![Audio and text folders in Azure Storage](_images/files-on-storage.png)
+
+#### Parameters required to start process
+
+The process is triggered by calling the Submit Logic App with **HTTP POST** request. You can find the URL in Azure Portal - find the logic app, go to the **Overview** section, click **See trigger history** and copy the **Callback URL**.
+
+Request schema can be found in the definition of the Logic App, sample minimal request is here:
+
+```json
+{
+	"audioBlobLocation": "/files/audio",
+	"textBlobLocation": "/files/text",
+    "containerImage": "msimecek/speech-pipeline:0.18-full",
+    "location": "northeurope",
+    "processName": "process16",
+    "removeSilence": "true",
+    "speechKey": "44564654keykey5465456"
+}
+```
+
+`audioBlobLocation` and `textBlobLocation` should be paths relative to the Storage Account root.
+
+If you don't specify `containerImage`, default will be used (which is the latest image). See [DockerHub](https://hub.docker.com/r/msimecek/speech-pipeline/tags/) to find more versions.
+
+`processName` is important, because it identifies this particular pipeline through the whole process. It's also required in different steps.
+
+`speechKey` is required at this moment, but could be added automatically from ARM in the future. Get it from the Speech service resource provisioned as part of the whole infrastructure.
+
+Don't forget to set the **Content-Type** to `application/json`.
+
+It will take a few seconds, but if everything went successfuly, you should get similar response:
+
+```
+Submitted process process16
+```
+
+This means that the process has started. It will take several hours to complete.
+
+### Troubleshooting
+
+Is there a new resource in your Resource Group with the name of your `processName` and type `Container Instances`? If not, something happened between Logic Apps and Function Apps.
+
+1. Check that your service principal has the **Contributor** role in your resource group.
+2. Verify that the Application Settings in the Function App were propagated correctly (`AzureTenantId`, `Location`, `PrincipalAppId`, `PrincipalAppSecret`, `ResourceGroupName`).
+3. Check that you uploaded both the audio and transcript files in correct Storage folders.
+
+If the container was started, but you don't see any speech models on the CRIS portal, check logs on the container. 
+
+```
+az container logs -g resourcegroupname -n process16
+```
 
 ## Components and in depth description
 
@@ -347,56 +426,7 @@ speech transcript list
 etc.
 ```
 
-### Data Preparation
 
-The training process uses audio samples along with their respective transcripts to create a speech to text model. Before you run start the training process you will need two sets of data:
-
-* Audio - should be full audio recordings that you want to use for training. 
-  * can be multiple files (for example several sports matches)
-  * can be in any of the common formats (WAV, MP3, MP4...)
-  * can be audio-only or with video (visual part will be ignored during the process)
-  * should represent the audio environment in which the model will be used (that is with background noise, difficult accents etc.)
-  * recommended total length is no less than 3 hours
-* Transcripts - should be full transcript of each of the audio files.
-  * needs to be plain text (TXT)
-  * needs to be encoded as UTF-8 BOM
-  * should not contain any UTF-8 characters above U+00A1 in the [Unicode characters table](http://www.utf8-chartable.de/), typically `–`, `‘`, `‚`, `“` etc. (curly characters produced by Microsoft Word)
-  * needs to have the same filename as respective audio file
-
-### Upload to storage
-
-The ARM deployment has created a **Storage Account** in Azure for you. What you need to do next is:
-
-* create an `audio` folder and upload all your audio files to it
-* create a `text` folder and upload all transcript files to it
-* if a language model file is to be uploaded, rename the file to `language.txt` add to the `text` folder.
-
-> **Hint**: Use [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/) too manage storage accounts and upload/download files.
-
-### Parameters required to start process
-The process is triggered by calling the Submit Logic App with HTTP POST request. [?? How to get URL ??]
-
-Request schema can be found in the definition of the Logic App, sample minimal request is here:
-
-```json
-{
-	"audioBlobLocation": "/files/audio",
-	"textBlobLocation": "/files/text",
-    "containerImage": "msimecek/speech-pipeline:0.16-full",
-    "location": "northeurope",
-    "processName": "process16",
-    "removeSilence": "true",
-    "speechKey": "44564654keykey5465456"
-}
-```
-
-`audioBlobLocation` and `textBlobLocation` should be paths relative to the Storage Account root.
-
-If you don't specify `containerImage`, default will be used (which is the latest image).
-
-`processName` is important, because it identifies this particular pipeline through the whole process. It's also required in different steps.
-
-`speechKey` is required at this moment, but could be added automatically from ARM in the future.
 
 ## Todo
 * Consider adding a monitoring solution - for example, you can use the Log Analytics Send step within the Logic Apps to track the job steps. There is also a Logic Apps Management workspace solution that you can import into Log Analytics to capture operational traces.
