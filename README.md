@@ -99,6 +99,10 @@ Upon provisioning the deployment - the settings of the services can be edited to
 
 * `Deployment Name`: If multiple instances planned, change to indicate the specific pipeline. This will dynamically change subsequently generated service names to mitigate naming conflicts.
 
+When the deployment completes, you can go to the **Outputs** section and get important parameters which will be used to start the process.
+
+![Template outputs](_images/template-outputs.png)
+
 ### Use the pipeline
 
 With the infrastructure provisioned, you will need to upload training files to Blob Storage and call the Submit Logic App.
@@ -133,7 +137,9 @@ The ARM deployment has created a **Storage Account** in Azure for you. What you 
 
 #### Start process
 
-The process is triggered by calling the Submit Logic App with **HTTP POST** request. You can find the URL in Azure Portal - find the logic app, go to the **Overview** section, click **See trigger history** and copy the **Callback URL**.
+The process is triggered by calling the Submit Logic App with **HTTP POST** request. You can find the URL in **Outputs** section of the ARM template deployment.
+
+> Alternatively you can go to the **Overview** section in the Logic App, click **See trigger history** and copy the **Callback URL**.
 
 Request schema can be found in the definition of the Logic App, sample minimal request is here:
 
