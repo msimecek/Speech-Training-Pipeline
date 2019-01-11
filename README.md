@@ -175,7 +175,7 @@ This means that the process has started. It will take several hours to complete.
 
 #### Process end
 
-Once the process finishes, the container instance is automatically removed.
+Once the process finishes, the container instance is automatically removed and logs are uploaded to the speech Storage Account.
 
 ### Troubleshooting
 
@@ -326,6 +326,7 @@ In addition to standard Function App settings (`AzureWebJobsStorage` etc.) these
 * `AzureTenantId`: This value is returned by the `subscription().tenantId` statement in Resource Manager. Or you can get it from the Subscription section in the Azure portal.
 * `ResourceGroupName`: In which Resource Group is the pipeline container supposed to run.
 * `Location`: In which region is the pipeline container supposed to run.
+* `LogStorageConnectionString`: Connection string to Storage Account where logs will be uploaded. A container called "logs" is expected.
 
 **Functions:**
 
