@@ -1211,5 +1211,19 @@
             },
             "dependsOn": ["[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts_speechfiles_name'))]"]
         }
-    ]
+    ],
+    "outputs": {
+        "submitAppEndpoint": {
+            "type": "string",
+            "value": "[listCallbackURL(resourceId('Microsoft.Logic/workflows/triggers', variables('workflows_speech_job_name'), 'manual'), '2016-06-01').value]"
+        },
+        "location": {
+            "type": "string",
+            "value": "[resourceGroup().location]"
+        },
+        "speechServiceKey": {
+            "type": "string",
+            "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('accounts_speech_service_name')), '2016-02-01-preview').key1]"
+        }
+    }
 }
