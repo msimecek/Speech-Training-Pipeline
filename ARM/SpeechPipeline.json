@@ -147,7 +147,18 @@
                     "properties": {
                       "publicAccess": "None"
                     }
-                  }
+                },
+                {
+                    "type": "blobServices/containers",
+                    "apiVersion": "2018-03-01-preview",
+                    "name": "default/logs",
+                    "dependsOn": [
+                      "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts_speechfiles_name'))]"
+                    ],
+                    "properties": {
+                      "publicAccess": "None"
+                    }
+                }
               ],
             "dependsOn": []
         },
@@ -208,6 +219,10 @@
                         {
                             "name": "AzureTenantId",
                             "value": "[subscription().tenantId]"
+                        },
+                        {
+                            "name": "LogStorageConnectionString",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccounts_speechfiles_name'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts_speechfiles_name')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]"
                         }
                     ]
                 }
