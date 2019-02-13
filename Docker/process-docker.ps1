@@ -83,11 +83,6 @@ if (($null -eq $audioFilesList) -or `
 
 # Defaults
 
-if ($null -eq $defaultScenarioId) {
-    $defaultScenarioId = "c7a69da3-27de-4a4b-ab75-b6716f6321e5" # "V2.5 Conversational (AM/LM adapt) - en-us"
-    $locale = "en-us"
-}
-
 if ($null -eq $locale) {
     $locale = "en-us"
 }
@@ -130,6 +125,14 @@ node --version
 $idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
 
 Write-SegmentDuration -Name "ToolsInit"
+
+Set-SegmentStart -Name "LocaleCheck"
+# Before downloading, check if the requested locale is valid.
+$availableLocales = /usr/bin/SpeechCLI/speech model locales --type acoustic --simple
+if (!$availableLocales.ToLower().Contains($locale)) {
+    Throw "Locale $locale is not supported with custom speech models."
+}
+Write-SegmentDuration -Name "LocaleCheck"
 
 # Parse source files into arrays and remove empty lines. Each line is expected to be a file URL.
 Write-Host "Downloading source files."
@@ -190,6 +193,10 @@ foreach ($wav in $sourceWavs.Keys)
 }
 
 Write-SegmentDuration -Name "SourceDownload"
+
+# Identify baseline model for given locale
+$scenarios = (/usr/bin/SpeechCLI/speech model list-scenarios --locale $locale --simple) -Split '\n'
+$defaultScenarioId = $scenarios[0]
 
 # If language data provided, create language model.
 if (!($null -eq $languageModelFile)) 
@@ -278,6 +285,7 @@ Write-SegmentDuration -Name "Transcriber"
 Write-Host "Compiling audio and transcript files."
 Set-SegmentStart -Name "SpeechCompile"
 
+# At least 1 file is needed for testing. If the percentage is too high to populate test dataset, it will be set to 0.
 if ($cleaned.Length * ($testPercentage / 100) -lt 1) 
 {
     Write-Host "Not enough files to populate the test dataset. Only training dataset will be created."
@@ -287,13 +295,13 @@ if ($cleaned.Length * ($testPercentage / 100) -lt 1)
 & /usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage $testPercentage
 Write-SegmentDuration -Name "SpeechCompile"
 
-# Create acoustic datasets for training
+# Create acoustic datasets for training.
 Write-Host "Creating acoustic datasets for training."
 Set-SegmentStart -Name "AccousticDatasetTrain"
 $trainDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName --locale $locale --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
 Write-SegmentDuration -Name "AccousticDatasetTrain"
 
-# Create acoustic model with scenario "English conversational"
+# Create acoustic model with selected base model.
 Write-Host "Creating acoustic model."
 Set-SegmentStart -Name "AcousticModelTrain"
 $model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale $locale --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
