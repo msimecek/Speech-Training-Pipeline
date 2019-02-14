@@ -81,8 +81,12 @@ if (($null -eq $audioFilesList) -or `
     Throw "Required parameter missing."
 }
 
-# Defaults
+if (($null -eq $languageModelFile) -and ($null -eq $languageModelId)) 
+{
+    Throw "Either languageModelFile or languageModelId must be provided."
+}
 
+# Defaults
 if ($null -eq $locale) {
     $locale = "en-us"
 }
