@@ -147,7 +147,6 @@ $sourceTxts = @{}
 
 # Download WAV files locally
 New-Item $rootDir/SourceWavs -ItemType Directory -Force
-
 foreach ($wav in $sourceWavs.Keys) 
 {
     if (!($sourceTxts.ContainsKey($wav)))
@@ -197,6 +196,7 @@ Write-SegmentDuration -Name "SourceDownload"
 # Identify baseline model for given locale
 $scenarios = (/usr/bin/SpeechCLI/speech model list-scenarios --locale $locale --simple) -Split '\n'
 $defaultScenarioId = $scenarios[0]
+Write-Host "Selected base model (scenario): $defaultScenarioId"
 
 # If language data provided, create language model.
 if (!($null -eq $languageModelFile)) 
@@ -210,7 +210,6 @@ if (!($null -eq $languageModelFile))
 
     Write-SegmentDuration -Name "CreateLanguageModel"
 }
-
 
 # If baseline endpoint not provided, create one with baseline models first.
 if ($null -eq $speechEndpoint) 
@@ -328,6 +327,7 @@ Write-SegmentDuration -Name "Endpoint"
 Write-Host "Process done."
 Write-SegmentDuration -Name "MainProcess"
 
+# Call webhook, if provided. $webhookContent gets injected as Content.
 if (!($null -eq $webhookUrl)) 
 {
     $content = @{
