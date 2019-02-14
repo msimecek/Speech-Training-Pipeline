@@ -125,8 +125,7 @@ node --version
 /usr/bin/SpeechCLI/speech --version
 
 # Config CLI
-& /usr/bin/SpeechCLI/speech config set --name Build --key $speechKey --region $speechRegion --select
-$idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
+/usr/bin/SpeechCLI/speech config set --name Build --key $speechKey --region $speechRegion --select
 
 Write-SegmentDuration -Name "ToolsInit"
 
@@ -202,15 +201,15 @@ $scenarios = (/usr/bin/SpeechCLI/speech model list-scenarios --locale $locale --
 $defaultScenarioId = $scenarios[0]
 Write-Host "Selected base model (scenario): $defaultScenarioId"
 
-# If language data provided, create language model.
+# If language data provided, create language model. Otherwise expect that $languageModelId was provided.
 if (!($null -eq $languageModelFile)) 
 {
     Set-SegmentStart -Name "CreateLanguageModel"
     Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
     
     Write-Host "Creating language model."
-    $languageDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --locale $locale --language $rootDir/$processName-source-language.txt --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
-    $languageModelId = & /usr/bin/SpeechCLI/speech model create --name $processName-Lang --locale $locale -lng $languageDataset -s $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+    $languageDataset = /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --locale $locale --language $rootDir/$processName-source-language.txt --wait | Get-IdFromCli
+    $languageModelId = /usr/bin/SpeechCLI/speech model create --name $processName-Lang --locale $locale -lng $languageDataset -s $defaultScenarioId --wait | Get-IdFromCli
 
     Write-SegmentDuration -Name "CreateLanguageModel"
 }
@@ -226,7 +225,7 @@ if ($null -eq $speechEndpoint)
 
     # Create baseline endpoint.
     Write-Host "Creating baseline endpoint."
-    $speechEndpoint = & /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l $locale -m $defaultScenarioId -lm $languageModelId --wait  | Select-String $idPattern | % {$_.Matches.Groups[0].Value} 
+    $speechEndpoint = /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l $locale -m $defaultScenarioId -lm $languageModelId --wait  | Get-IdFromCli
     Write-SegmentDuration -Name "CreateBaselineEndpoint"
 }
 
@@ -295,37 +294,37 @@ if ($cleaned.Length * ($testPercentage / 100) -lt 1)
     $testPercentage = 0
 }
 
-& /usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage $testPercentage
+/usr/bin/SpeechCLI/speech compile --audio "$rootDir/$processName-Cleaned" --transcript "$rootDir/$processName-cleaned-transcript.txt" --output "$rootDir/$processName-Compiled" --test-percentage $testPercentage
 Write-SegmentDuration -Name "SpeechCompile"
 
 # Create acoustic datasets for training.
 Write-Host "Creating acoustic datasets for training."
 Set-SegmentStart -Name "AccousticDatasetTrain"
-$trainDataset = & /usr/bin/SpeechCLI/speech dataset create --name $processName --locale $locale --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+$trainDataset = /usr/bin/SpeechCLI/speech dataset create --name $processName --locale $locale --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Get-IdFromCli
 Write-SegmentDuration -Name "AccousticDatasetTrain"
 
 # Create acoustic model with selected base model.
 Write-Host "Creating acoustic model."
 Set-SegmentStart -Name "AcousticModelTrain"
-$model = & /usr/bin/SpeechCLI/speech model create --name $processName --locale $locale --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+$model = /usr/bin/SpeechCLI/speech model create --name $processName --locale $locale --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Get-IdFromCli
 Write-SegmentDuration -Name "AcousticModelTrain"
 
 if ($testPercentage -gt 0) 
 {
     # Create test acoustic datasets for testing.
     Set-SegmentStart -Name "AcousticModelTest"
-    $testDataset = & /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --locale $locale --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Select-String $idPattern | % {$_.Matches.Groups[0].Value}
+    $testDataset = /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --locale $locale --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Get-IdFromCli
     Write-SegmentDuration -Name "AcousticModelTest"
 
     # Create test for the model.
     Set-SegmentStart -Name "Test"
-    & /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --language-model $languageModelId --wait
+    /usr/bin/SpeechCLI/speech test create --name $processName --audio-dataset $testDataset --model $model --language-model $languageModelId --wait
     Write-SegmentDuration -Name "Test"
 }
 
 # Create endpoint
 Set-SegmentStart -Name "Endpoint"
-& /usr/bin/SpeechCLI/speech endpoint create --name $processName --locale $locale --model $model --language-model $languageModelId --wait
+$newEndpointId = /usr/bin/SpeechCLI/speech endpoint create --name $processName --locale $locale --model $model --language-model $languageModelId --wait | Get-IdFromCli
 Write-SegmentDuration -Name "Endpoint"
 
 Write-Host "Process done."
@@ -338,9 +337,11 @@ if (!($null -eq $webhookUrl))
         ProcessName = $processName;
         Errors = $Error;
         Content = $webhookContent;
+        EndpointId = $newEndpointId;
+        LanguageModelId = $languageModelId;
     }
 
-    Invoke-WebRequest -Uri $webhookUrl -Method POST -Body ($content | ConvertTo-Json) | Select-Object -Property StatusCode, StatusDescription
+    Invoke-WebRequest -Uri $webhookUrl -Method POST -ContentType "application/json" -Body ($content | ConvertTo-Json) | Select-Object -Property StatusCode, StatusDescription
 
     Write-Host "Webhook triggered."
 }

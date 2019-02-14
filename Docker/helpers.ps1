@@ -27,3 +27,8 @@ function Write-SegmentDuration {
 
     "[Measurement][{0}][{1}] {2}s" -f $env:processName, $Name, ($end - $start)
 }
+
+function Get-IdFromCli {
+    $idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
+    ($input | Select-String $idPattern | % {$_.Matches.Groups[0].Value})
+}
