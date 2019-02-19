@@ -8,8 +8,10 @@ function Set-SegmentStart {
     }
 
     $seg = Get-Variable -Name $segmentsVarName -ValueOnly -Scope Global
-    $seg += @{ $Name = (Get-Date -UFormat %s) }
-    Set-Variable -Name $segmentsVarName -Value $seg -Scope Global
+    if (!($seg.Keys -contains $Name)) {
+        $seg += @{ $Name = (Get-Date -UFormat %s) }
+        Set-Variable -Name $segmentsVarName -Value $seg -Scope Global
+    }
 }
 
 function Write-SegmentDuration {
