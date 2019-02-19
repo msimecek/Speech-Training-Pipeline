@@ -229,19 +229,14 @@ if ($null -eq $speechEndpoint)
     Write-SegmentDuration -Name "CreateBaselineEndpoint"
 }
 
-# Run Batcher, if there's no machine-transcript present
-# - machine transcript creation is time consuming, this allows to skip it if the process needs to be run again
+# Run Batcher
+# - machine transcript creation is time consuming
 cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher
 
 Set-SegmentStart -Name "Batcher"
 foreach ($wav in $sourceWavs.Keys) 
 {
-    if (!(Test-Path "$rootDir/$processName-machine-transcript-$wav.txt")) 
-    {
-       node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/Chunks-$wav" --output "$rootDir/$processName-machine-transcript-$wav.txt"
-       
-       Get-Content "$rootDir/$processName-source-transcript-$wav.txt" | Set-Content -Encoding UTF8 "$rootDir/$processName-source-transcript-$wav.txt"
-    }
+   node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/Chunks-$wav" --output "$rootDir/$processName-machine-transcript-$wav.txt"
 }
 Write-SegmentDuration -Name "Batcher"
 
@@ -258,11 +253,14 @@ foreach ($wav in $sourceWavs.Keys)
     # TODO: exclude from loop, when machine transcript empty
     Set-SegmentStart -Name "TranscriberFile-$wav"
 
+    # Encoding cleanup - otherwise transcriber fails on certain characters
+    Get-Content "$rootDir/$processName-source-transcript-$wav.txt" | Set-Content -Encoding UTF8 "$rootDir/$processName-source-transcript-$wav-utf8.txt"
+
     # python transcriber.py -t '11_WTA_ROM_STEPvGARC_2018/11_WTA_ROM_STEPvGARC_2018.txt' -a '11_WTA_ROM_STEPvGARC_2018/11_WTA_ROM_STEPvGARC_OFFSET.txt' -g '11_WTA_ROM_STEPvGARC_TRANSCRIPT_testfunc2.txt'
     # -t = TRANSCRIBED_FILE = official full transcript
     # -a = audio processed file = output from batcher
     # -g = output file
-    python3 transcriber.py -t "$rootDir/$processName-source-transcript-$wav.txt" -a "$rootDir/$processName-machine-transcript-$wav.txt" -g "$rootDir/$processName-matched-transcript-$wav.txt"
+    python3 transcriber.py -t "$rootDir/$processName-source-transcript-$wav-utf8.txt" -a "$rootDir/$processName-machine-transcript-$wav.txt" -g "$rootDir/$processName-matched-transcript-$wav.txt"
     Write-SegmentDuration -Name "TranscriberFile-$wav"
 
     # Cleanup (remove NEEDS MANUAL CHECK and files which don't have transcript)
