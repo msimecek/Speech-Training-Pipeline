@@ -3,7 +3,7 @@ if (Test-Path "SpeechCLI") {
     exit
 }
 
-$version = "1.3.0"
+$version = "1.3.2"
 
 $currentDir = (Get-Item -Path ".\" -Verbose).FullName
 
