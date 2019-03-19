@@ -170,10 +170,6 @@ if ($null -eq $speechEndpoint)
 New-Item $rootDir/$processName-Chunks -ItemType Directory
 Get-ChildItem $audioFilesPath -Exclude *.txt | % { ffmpeg -i $_ -acodec pcm_s16le -vn -ar 16000 -ac 1 $rootDir/$processName-Chunks/$($_.Name) }
 
-# foreach ($item in $audioFiles) {
-# 	ffmpeg -i $item -acodec pcm_s16le -vn -ar 16000 -ac 1 $rootDir/$processName-Chunks/$($item.Name)
-# }
-
 # Run Batcher
 # - machine transcript creation is time consuming
 cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher
