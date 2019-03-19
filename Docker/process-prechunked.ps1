@@ -1,9 +1,8 @@
 
-# TXT file with links to source WAV files. One line = one file.
-#$audioFilesList = "https://<url>/<file>.txt"
+# Filesystem path to where audio chunks are located.
 $audioFilesPath = $env:audioFilesPath
 
-# TXT file with links to transcription files corresponding to WAV files. One file = complete trascript of the whole WAV file (no timestamps, only text).
+# Filesystem path to TXT file with transcript.
 #$transcriptFilesList = "https://<url>/<file>.txt"
 $transcriptFilePath = $env:transcriptFilePath
 
@@ -118,11 +117,11 @@ if (!$availableLocales.ToLower().Contains($locale)) {
 Write-SegmentDuration -Name "LocaleCheck"
 
 # Check encoding of the source transcript file
-[byte[]]$byte = Get-Content -ReadCount 4 -TotalCount 4 -Path $transcriptFilePath -AsByteStream
-if (!($byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf))
-{ 
-    Throw "$transcriptFilePath is not encoded in 'UTF-8 Signature'."
-}
+# [byte[]]$byte = Get-Content -ReadCount 4 -TotalCount 4 -Path $transcriptFilePath -AsByteStream
+# if (!($byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf))
+# { 
+#     Throw "$transcriptFilePath is not encoded in 'UTF-8 Signature'."
+# }
 
 # Replace non-supported Unicode characters (above U+00A1) with ASCII variants.
 (Get-Content $transcriptFilePath) `
@@ -165,9 +164,11 @@ if ($null -eq $speechEndpoint)
     Write-SegmentDuration -Name "CreateBaselineEndpoint"
 }
 
+# TODO: check if folder exists and contains any files
+
 # Encode audio files.
 New-Item $rootDir/$processName-Chunks -ItemType Directory
-Get-ChildItem $audioFilesPath | % { ffmpeg -i $_ -acodec pcm_s16le -vn -ar 16000 -ac 1 $rootDir/$processName-Chunks/$($_.Name) }
+Get-ChildItem $audioFilesPath -Exclude *.txt | % { ffmpeg -i $_ -acodec pcm_s16le -vn -ar 16000 -ac 1 $rootDir/$processName-Chunks/$($_.Name) }
 
 # foreach ($item in $audioFiles) {
 # 	ffmpeg -i $item -acodec pcm_s16le -vn -ar 16000 -ac 1 $rootDir/$processName-Chunks/$($item.Name)
