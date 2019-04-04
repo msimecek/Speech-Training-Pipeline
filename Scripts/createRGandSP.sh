@@ -14,4 +14,4 @@ PRINCIPAL=( $(az ad sp create-for-rbac --role contributor --scopes $SCOPE --quer
 
 echo Service principal created. Make note of the following information, it will not be shown again.
 echo - AppId: ${PRINCIPAL[0]}
-echo - Password: ${PRINCIPAL[1]}
+echo - AppSecret: ${PRINCIPAL[1]}
