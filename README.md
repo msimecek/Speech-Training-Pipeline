@@ -33,7 +33,7 @@ There are two ways: **Bash script** or **Azure Portal**.
 > **Requirements:** To run the deployment script to create the Resource Group and Service Principal required for this solution, you will need to have the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) installed.
 
 1. Log in to the Azure CLI
-2. Run script [createRGandSP.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/createRGandSP.sh)
+2. Run script [createRGandSP.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/master/Scripts/createRGandSP.sh)
 3. Copy the values output by the script as you will need them in the ARM deploy step
 
 The output should look like the following:
@@ -52,11 +52,14 @@ The output should look like the following:
 Created resource group speech16
 Retrying role assignment creation: 1/36
 Retrying role assignment creation: 2/36
-Created SP with appid 6b84e051-*****************
-SP key 62a************************
+Service principal created. Make note of the following information, it will not be shown again.
+- AppId: 6b84e051-*****************
+- AppSecret: 62a************************
 ```
 
-If at any time you need to get the values of the Service Principal, you can simply run the script [SpeechPipelineUtils.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/shane-doc/Scripts/SpeechPipelineUtils.sh) although this is best run after the Deploy from ARM step.
+If at any time you need to get the values of the Service Principal, you can simply run the script [SpeechPipelineUtils.sh](https://github.com/msimecek/Speech-Training-Pipeline/blob/master/Scripts/SpeechPipelineUtils.sh) although this is best run after the Deploy from ARM step.
+
+> **Note:** Service principal secret is shown only once after creation. If you don't store after creation, you can't retrieve it from Azure and you'd have to create new one.
 
 #### Azure Portal
 
@@ -129,7 +132,7 @@ The ARM deployment has created a **Storage Account** in Azure for you. What you 
 
 * create an `audio` folder and upload all your audio files to it
 * create a `text` folder and upload all transcript files to it
-* if a language model file will be used, rename it to `language.txt` and add it to the `text` folder
+* if a [language model](https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/how-to-customize-language-model) file will be used, rename it to `language.txt` and add it to the `text` folder
 
 > **Hint**: Use [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/) to manage storage accounts and upload/download files.
 
@@ -145,13 +148,13 @@ Request schema can be found in the definition of the Logic App, sample minimal r
 
 ```json
 {
-	"audioBlobLocation": "/files/audio",
-	"textBlobLocation": "/files/text",
-    "containerImage": "msimecek/speech-pipeline:0.18-full",
+    "audioBlobLocation": "/files/audio",
+    "textBlobLocation": "/files/text",
+    "containerImage": "msimecek/speech-pipeline:latest",
     "location": "northeurope",
     "processName": "process16",
     "removeSilence": "true",
-    "speechKey": "44564654keykey5465456"
+    "speechKey": "keykeykey"
 }
 ```
 
@@ -167,7 +170,7 @@ Don't forget to set the **Content-Type** to `application/json`.
 
 It will take a few seconds, but if everything went successfuly, you should get similar response:
 
-```
+```powershelll
 Submitted process process16
 ```
 
@@ -187,7 +190,7 @@ Is there a new resource in your Resource Group with the name of your `processNam
 
 If the container was started, but you don't see any speech models on the CRIS portal, check logs on the container.
 
-```
+```powershell
 az container logs -g resourcegroupname -n process16
 ```
 
@@ -216,11 +219,11 @@ When called from the specified endpoint with given parameters, the logic app gen
 
 ```json
 {
-	"audioBlobLocation": "/files/audio",
-	"textBlobLocation": "/files/text",
-    "containerImage": "msimecek/speech-pipeline:0.18-full",
+    "audioBlobLocation": "/files/audio",
+    "textBlobLocation": "/files/text",
+    "containerImage": "msimecek/speech-pipeline:latest",
     "location": "northeurope",
-    "speechKey": "aaabbbcccddddeeee",
+    "speechKey": "keykeykey",
     "processName": "process16",
     "removeSilence": "true",
     "testPercentage": "10",
@@ -234,7 +237,7 @@ Full list of inputs can be found [in the ARM template](https://github.com/msimec
 
 A POST request which initialises the container with the audio files and process name.
 
- #### The Enroll Logic App
+#### The Enroll Logic App
 
 This Logic App will enroll a speaker by using a short clip of their voice. See [Speaker Recognition](https://azure.microsoft.com/en-us/services/cognitive-services/speaker-recognition/) for more information
 
@@ -243,7 +246,8 @@ This Logic App will enroll a speaker by using a short clip of their voice. See [
 The enrollment service will return a GUID upon successful registration and the Logic App will write a file to blob storage that will reference the speaker's name to the enrolled voice. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
 
 *Inputs*
-```
+
+```json
     "properties": {
         "fileURL": { 'This is the url of the voice file you want to enroll
             "type": "string"
@@ -281,7 +285,8 @@ This Logic App will recognise a speaker by using a short clip of a voice. See [S
 The recognise service will return a GUID upon successful identification and the Logic App will read a file from blob storage that will retrieve the reference to the speaker's name. This is simply an example implementation, a more efficient implementation would be to export and run this model locally in a container and store the speaker GUID to speaker name in memory for more real time speaker identification.
 
 *Inputs*
-```
+
+```json
 {
     "properties": {
         "fileURL": {
@@ -303,11 +308,12 @@ The recognise service will return a GUID upon successful identification and the 
     "type": "object"
 }
 ```
+
 *Outputs*
 
 The name of the speaker as retrieved from the blob storage file matching the speaker GUID
 
-###  Function App (Pipeline Manager)
+### Function App (Pipeline Manager)
 
 The training pipeline itself is a Docker container and we run it on demand in [Azure Container Instances](https://azure.microsoft.com/en-us/services/container-instances/).
 
@@ -348,14 +354,14 @@ var containerGroup = azure.ContainerGroups.Define(startmessage.ContainerName)
     .WithPublicImageRegistryOnly()
     .WithoutVolume()
     .DefineContainerInstance("pipeline")
-    	.WithImage(startmessage.ContainerImage)
-    	.WithoutPorts()
-    	.WithCpuCoreCount(2)
-    	.WithMemorySizeInGB(3.5)
-    	.WithEnvironmentVariables(startmessage.Env)
-    	.Attach()
-    	.WithRestartPolicy(ContainerGroupRestartPolicy.Never)
-    	.Create();
+        .WithImage(startmessage.ContainerImage)
+        .WithoutPorts()
+        .WithCpuCoreCount(2)
+        .WithMemorySizeInGB(3.5)
+        .WithEnvironmentVariables(startmessage.Env)
+        .Attach()
+        .WithRestartPolicy(ContainerGroupRestartPolicy.Never)
+        .Create();
 ```
 
 Our test runs show that optimal amount of container RAM is 3.5 GB with CPU count 2.
@@ -366,7 +372,7 @@ Our test runs show that optimal amount of container RAM is 3.5 GB with CPU count
 
 ```json
 {
-  "containerImage": "msimecek/speech-pipeline:0.16-full",
+  "containerImage": "msimecek/speech-pipeline:latest",
   "pipeline.processName": "mujproces",
   "pipeline.audioFilesList": "https://storageacc.blob.core.windows.net/files/text/language.txt?sv=..saskey",
   "pipeline.transcriptFilesList": "https://storageacc.blob.core.windows.net/files/text/textInput.txt?sv=..saskey",
@@ -389,9 +395,9 @@ Our test runs show that optimal amount of container RAM is 3.5 GB with CPU count
 
 ```json
 {
-	"ProcessName": "mujproces",
-	"Errors": null,
-	"Content": null
+    "ProcessName": "mujproces",
+    "Errors": null,
+    "Content": null
 }
 ```
 
@@ -425,13 +431,13 @@ To get the unofficial Speech CLI tool, go to the [GitHub repo](https://github.co
 
 Configure it with your Speech key and region:
 
-```
+```powershell
 speech config set --name Pipeline --key 44564654keykey5465456 --region northeurope --select
 ```
 
 Then you can work with datasets, models, tests, endpoints or transcripts:
 
-```
+```powershell
 speech dataset list
 speech model list
 speech test list
@@ -440,9 +446,8 @@ speech transcript list
 etc.
 ```
 
-
-
 ## Todo
+
 * Consider adding a monitoring solution - for example, you can use the Log Analytics Send step within the Logic Apps to track the job steps. There is also a Logic Apps Management workspace solution that you can import into Log Analytics to capture operational traces.
 
 ## References
