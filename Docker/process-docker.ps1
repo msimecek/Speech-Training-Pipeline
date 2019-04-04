@@ -132,7 +132,7 @@ Write-SegmentDuration -Name "ToolsInit"
 Set-SegmentStart -Name "LocaleCheck"
 # Before downloading, check if the requested locale is valid.
 $availableLocales = /usr/bin/SpeechCLI/speech model locales --type acoustic --simple
-if (!$availableLocales.ToLower().Contains($locale)) {
+if (!$availableLocales.ToLower().Contains($locale.ToLower()) {
     Throw "Locale $locale is not supported with custom speech models."
 }
 Write-SegmentDuration -Name "LocaleCheck"
