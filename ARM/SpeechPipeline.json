@@ -790,6 +790,9 @@
                                         },
                                         "textBlobLocation": {
                                             "type": "string"
+                                        },
+                                        "locale": {
+                                            "type": "string"
                                         }
                                     },
                                     "type": "object"
@@ -1166,6 +1169,7 @@
                                 "body": {
                                     "containerImage": "@{triggerBody()?['containerImage']}",
                                     "pipeline.processName": "@{triggerBody()?['processName']}",
+                                    "pipeline.locale": "@{triggerBody()?['locale']}",
                                     "pipeline.audioFilesList": "@{body('Generate_audioInput_file_URI')?['WebUrl']}",
                                     "pipeline.transcriptFilesList": "@{body('Generate_textInput_file__URI')?['WebUrl']}",
                                     "pipeline.languageModelFile": "@{body('Generate_languageInput_file_URI')?['WebUrl']}",
