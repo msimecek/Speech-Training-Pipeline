@@ -23,5 +23,3 @@ TENANT=$(az account list --query "[?isDefault].tenantId" --output tsv --all)
 echo AD Tenant $TENANT
 SPAPPID=$(az ad sp list --display-name $RESOURCE_GROUP --query "[?appId].appId" --output tsv)
 echo Service Principal AppId $SPAPPID
-SPAPPKEY=$(az ad sp credential list --id $SPAPPID --query "[?keyId].keyId" --output tsv)
-echo Service Principal key $SPAPPKEY
