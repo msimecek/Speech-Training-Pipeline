@@ -33,7 +33,7 @@
         "principalAppId": {
             "type": "string",
             "metadata": {
-                "description": "Application/Client ID. Service principal application needs to have the Contributor role in the target Resrouce Group. This can be set after deployment."
+                "description": "Application/Client ID. Service principal application needs to have the Contributor role in the target Resource Group."
             }
         },
         "principalAppSecret": {
@@ -44,14 +44,14 @@
         }
     },
     "variables": {
-        "storageAccounts_speechfiles_name": "[concat(parameters('storageAccountName'), uniqueString(parameters('deploymentName')))]",
-        "accounts_speaker_recognition_service_name": "[concat(parameters('speakerRecognitionServiceName'), uniqueString(parameters('deploymentName')))]",
-        "accounts_speech_service_name": "[concat(parameters('speechServiceName'), uniqueString(parameters('deploymentName')))]",
-        "workflows_enrollSpeaker_name": "[concat('enroll-', uniqueString(parameters('deploymentName')))]",
-        "workflows_speakerrecognition_name": "[concat('recognise-', uniqueString(parameters('deploymentName')))]",
-        "workflows_speech_job_name": "[concat('submit-', uniqueString(parameters('deploymentName')))]",
-        "hostingPlanName": "[concat('speechplan-', uniqueString(parameters('deploymentName')))]",
-        "functionAppName": "[concat('speechapp-', uniqueString(parameters('deploymentName')))]"
+        "storageAccounts_speechfiles_name": "[concat(parameters('storageAccountName'), uniqueString(resourceGroup().id))]",
+        "accounts_speaker_recognition_service_name": "[concat(parameters('speakerRecognitionServiceName'), uniqueString(resourceGroup().id))]",
+        "accounts_speech_service_name": "[concat(parameters('speechServiceName'), uniqueString(resourceGroup().id))]",
+        "workflows_enrollSpeaker_name": "[concat('enroll-', uniqueString(resourceGroup().id))]",
+        "workflows_speakerrecognition_name": "[concat('recognise-', uniqueString(resourceGroup().id))]",
+        "workflows_speech_job_name": "[concat('submit-', uniqueString(resourceGroup().id))]",
+        "hostingPlanName": "[concat('speechplan-', uniqueString(resourceGroup().id))]",
+        "functionAppName": "[concat('speechapp-', uniqueString(resourceGroup().id))]"
     },
     "resources": [
         {
