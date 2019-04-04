@@ -10,7 +10,8 @@ az group create --name $RESOURCE_GROUP --location $LOCATION
 SUBSCRIPTIONKEY=$(az account list --query "[?isDefault].id" --output tsv --all)
 SCOPE="/subscriptions/"$SUBSCRIPTIONKEY"/resourceGroups/"$RESOURCE_GROUP 
 echo Created resource group $RESOURCE_GROUP
-SPAPPID=$(az ad sp create-for-rbac --role contributor --scopes $SCOPE --query appId --output tsv)
-echo Created SP with appid $SPAPPID
-SPAPPKEY=$(az ad sp credential list --id $SPAPPID --query "[?keyId].keyId" --output tsv)
-echo SP key $SPAPPKEY
+PRINCIPAL=( $(az ad sp create-for-rbac --role contributor --scopes $SCOPE --query [appId,password] --output tsv) )
+
+echo Service principal created. Make note of the following information, it will not be shown again.
+echo - AppId: ${PRINCIPAL[0]}
+echo - Password: ${PRINCIPAL[1]}
