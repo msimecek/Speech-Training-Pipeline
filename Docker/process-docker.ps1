@@ -205,8 +205,10 @@ if (!($null -eq $languageModelFile))
 
     Write-Host "Creating language model."
     $languageDataset = /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --locale $locale --language $rootDir/$processName-source-language.txt --wait | Get-IdFromCli
+    Write-Host "Language dataset ID: $languageDataset" -ForegroundColor Green
     $languageModelId = /usr/bin/SpeechCLI/speech model create --name $processName-Lang --locale $locale -lng $languageDataset -s $defaultScenarioId --wait | Get-IdFromCli
-
+    Write-Host "Language model ID: $languageModelId" -ForegroundColor Green
+    
     Write-SegmentDuration -Name "CreateLanguageModel"
 }
 
@@ -222,6 +224,7 @@ if ($null -eq $speechEndpoint)
     # Create baseline endpoint.
     Write-Host "Creating baseline endpoint."
     $speechEndpoint = /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l $locale -m $defaultScenarioId -lm $languageModelId --wait  | Get-IdFromCli
+    Write-Host "Baseline endpoint ID: $languageModelId" -ForegroundColor Green
     Write-SegmentDuration -Name "CreateBaselineEndpoint"
 }
 
@@ -295,12 +298,14 @@ Write-SegmentDuration -Name "SpeechCompile"
 Write-Host "Creating acoustic datasets for training."
 Set-SegmentStart -Name "AccousticDatasetTrain"
 $trainDataset = /usr/bin/SpeechCLI/speech dataset create --name $processName --locale $locale --audio "$rootDir/$processName-Compiled/Train.zip" --transcript "$rootDir/$processName-Compiled/train.txt" --wait | Get-IdFromCli
+Write-Host "Training dataset ID: $trainDataset" -ForegroundColor Green
 Write-SegmentDuration -Name "AccousticDatasetTrain"
 
 # Create acoustic model with selected base model.
 Write-Host "Creating acoustic model."
 Set-SegmentStart -Name "AcousticModelTrain"
 $model = /usr/bin/SpeechCLI/speech model create --name $processName --locale $locale --audio-dataset $trainDataset --scenario $defaultScenarioId --wait | Get-IdFromCli
+Write-Host "Acoustic model ID: $model" -ForegroundColor Green
 Write-SegmentDuration -Name "AcousticModelTrain"
 
 if ($testPercentage -gt 0) 
@@ -308,6 +313,7 @@ if ($testPercentage -gt 0)
     # Create test acoustic datasets for testing.
     Set-SegmentStart -Name "AcousticModelTest"
     $testDataset = /usr/bin/SpeechCLI/speech dataset create --name "$processName-Test" --locale $locale --audio "$rootDir/$processName-Compiled/Test.zip" --transcript "$rootDir/$processName-Compiled/test.txt" --wait | Get-IdFromCli
+    Write-Host "Testing dataset ID: $testDataset" -ForegroundColor Green
     Write-SegmentDuration -Name "AcousticModelTest"
 
     # Create test for the model.
@@ -319,6 +325,7 @@ if ($testPercentage -gt 0)
 # Create endpoint
 Set-SegmentStart -Name "Endpoint"
 $newEndpointId = /usr/bin/SpeechCLI/speech endpoint create --name $processName --locale $locale --model $model --language-model $languageModelId --wait | Get-IdFromCli
+Write-Host "Trained endpoint ID: $newEndpointId" -ForegroundColor Green
 Write-SegmentDuration -Name "Endpoint"
 
 Write-Host "Process done."
