@@ -34,3 +34,13 @@ function Get-IdFromCli {
     $idPattern = "(\w{8})-(\w{4})-(\w{4})-(\w{4})-(\w{12})"
     ($input | Select-String $idPattern | % {$_.Matches.Groups[0].Value})
 }
+
+function Confirm-BOMStatus {
+    param($File)
+
+    [byte[]]$byte = Get-Content -ReadCount 4 -TotalCount 4 -Path $File -AsByteStream
+    if (!($byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf))
+    { 
+        Throw "$File is not encoded in 'UTF-8 Signature'."
+    }
+}

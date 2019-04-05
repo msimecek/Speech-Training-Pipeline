@@ -179,12 +179,7 @@ foreach ($wav in $sourceWavs.Keys)
         
     # Download full transcript
     Invoke-WebRequest $sourceTxts[$wav] -OutFile $rootDir/$processName-source-transcript-$wav.txt
-
-    [byte[]]$byte = Get-Content -ReadCount 4 -TotalCount 4 -Path "$rootDir/$processName-source-transcript-$wav.txt" -AsByteStream
-    if (!($byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf))
-    { 
-        Throw "$processName-source-transcript-$wav.txt is not encoded in 'UTF-8 Signature'."
-    }
+    Confirm-BOMStatus -File "$rootDir/$processName-source-transcript-$wav.txt"
 
     # Replace non-supported Unicode characters (above U+00A1) with ASCII variants.
     (Get-Content "$rootDir/$processName-source-transcript-$wav.txt") `
@@ -206,7 +201,8 @@ if (!($null -eq $languageModelFile))
 {
     Set-SegmentStart -Name "CreateLanguageModel"
     Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
-    
+    Confirm-BOMStatus -File $rootDir/$processName-source-language.txt
+
     Write-Host "Creating language model."
     $languageDataset = /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --locale $locale --language $rootDir/$processName-source-language.txt --wait | Get-IdFromCli
     $languageModelId = /usr/bin/SpeechCLI/speech model create --name $processName-Lang --locale $locale -lng $languageDataset -s $defaultScenarioId --wait | Get-IdFromCli
