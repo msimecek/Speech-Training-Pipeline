@@ -120,8 +120,6 @@ Set-SegmentStart -Name "ToolsInit"
 Write-Host "Checking dependencies."
 pip3 --version
 python3 --version
-npm --version
-node --version
 /usr/bin/SpeechCLI/speech --version
 
 # Config CLI
@@ -212,7 +210,7 @@ if (!($null -eq $languageModelFile))
     Write-SegmentDuration -Name "CreateLanguageModel"
 }
 
-# If baseline endpoint not provided, create one with baseline models first.
+# If baseline endpoint not provided, create one with baseline models first (in order to utilize the language model).
 if ($null -eq $speechEndpoint) 
 {
     Set-SegmentStart -Name "CreateBaselineEndpoint"
@@ -224,18 +222,19 @@ if ($null -eq $speechEndpoint)
     # Create baseline endpoint.
     Write-Host "Creating baseline endpoint."
     $speechEndpoint = /usr/bin/SpeechCLI/speech endpoint create -n $processName-Baseline -l $locale -m $defaultScenarioId -lm $languageModelId --wait  | Get-IdFromCli
-    Write-Host "Baseline endpoint ID: $languageModelId" -ForegroundColor Green
+    Write-Host "Baseline endpoint ID: $speechEndpoint" -ForegroundColor Green
     Write-SegmentDuration -Name "CreateBaselineEndpoint"
 }
 
 # Run Batcher
 # - machine transcript creation is time consuming
-cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher
-
 Set-SegmentStart -Name "Batcher"
+cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher-Py
 foreach ($wav in $sourceWavs.Keys) 
 {
-   node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/Chunks-$wav" --output "$rootDir/$processName-machine-transcript-$wav.txt"
+    # endpoint doesnt work yet
+    #python3 batcher.py --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/Chunks-$wav" --output "$rootDir/$processName-machine-transcript-$wav.txt"
+    python3 batcher.py --key $speechKey --region $speechRegion --input "$rootDir/Chunks-$wav/" --output "$rootDir/$processName-machine-transcript-$wav.txt"
 }
 Write-SegmentDuration -Name "Batcher"
 
