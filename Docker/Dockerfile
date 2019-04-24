@@ -18,7 +18,7 @@ RUN dpkg -i packages-microsoft-prod.deb
 RUN apt-get update \
         && apt-get install -y powershell
 
-RUN git clone https://github.com/shanepeckham/CustomSpeech-Processing-Pipeline.git /usr/src/repos/CustomSpeech-Processing-Pipeline
+RUN git clone https://github.com/shanepeckham/CustomSpeech-Processing-Pipeline.git --branch=0.22 /usr/src/repos/CustomSpeech-Processing-Pipeline
 RUN pip3 install -r /usr/src/repos/CustomSpeech-Processing-Pipeline/Transcriber/requirements.txt \
         && pip3 install -r /usr/src/repos/CustomSpeech-Processing-Pipeline/Batcher-Py/requirements.txt \
         && python3 -m spacy download en_core_web_lg

@@ -8,7 +8,7 @@ Before building the image run `install.ps1` first to download Speech CLI locally
 
 ## Usage
 
-To use this pipeline and get a trained speech endpoint in the end, you have to:
+To use this pipeline and get trained speech endpoint in the end, you have to:
 
 1. prepare data
 2. run it
@@ -23,7 +23,7 @@ To use this pipeline and get a trained speech endpoint in the end, you have to:
 
 **Prepare language dataset as TXT file.** Language datasets are easy to prepare and improve recognition significantly, that's why we require you to provide a language datasets for this pipeline. Language data structure is [described in the Docs](https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/how-to-customize-language-model#prepare-the-data).
 
-> We're currently testing a script which would generate the language dataset automatically, based on transcript files.
+> Since version 0.22 you don't have to provide your own language dataset. If you don't specify `languageModelId` and `languageModelFile` the script will generate it for you based on transcript files.
 
 **Upload your files to a location accessible from the internet (URL, to be precise).** We recommend Azure Blob Storage, because it supports *SAS URLs*, which means that your files don't have to be public in order to use them.
 
@@ -60,11 +60,12 @@ It is configured with environmental variables.
 
 | Name                  | Expected type | Description                                                  | Example                                      |
 | --------------------- | ------------- | ------------------------------------------------------------ | -------------------------------------------- |
+| `mode`                | string        | (Optional) Operation mode of the container. Expected values: `debug`, `standard` or `prechunked`. Default: `standard`. | 
 | `processName`         | string        | Custom name - for better orientation, will be used by different parts of the process. Should not contain spaces and special characters. | Iteration1                                   |
 | `audioFilesList`      | URL string    | TXT file containing a list of source WAV file URLs. One file per line. | https://sample.net/test/sourceWav.txt        |
 | `transcriptFilesList` | URL string    | TXT file containing a list of transcript TXT files. One file per line. Order matters (should correspond with WAV files. | https://sample.net/test/sourceTranscript.txt |
-| `languageModelFile`   | URL string    | TXT file with the language dataset.                          | https://sample.net/test/language.txt         |
-| `languageModelId`     | GUID string   | ID of a pre-trained language model. If `languageModelFile` is provided, this **will be overwritten**! | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1         |
+| `languageModelFile`   | URL string    | (Optional) TXT file with the language dataset.                          | https://sample.net/test/language.txt         |
+| `languageModelId`     | GUID string   | (Optional) ID of a pre-trained language model. If `languageModelFile` is provided, this **will be overwritten**! | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1         |
 | `speechEndpoint`      | GUID string   | (Optional) ID of a baseline endpoint from the Speech service. If not provided, new endpoint will be created. | cc6835cc-ddbb-4a1f-8fbb-bca0dd04ddb1         |
 | `speechKey`           | string        | Speech service subscription key.                             | acc1cabbbbeb4aaa8311477b05ab2236             |
 | `speechRegion`        | string        | Speech service region.                                       | northeurope                                  |
@@ -80,12 +81,12 @@ There are currently three ways of running the process.
 
 #### Docker
 
-Most convenient. Use Docker locally or [Azure Container Instances](https://azure.microsoft.com/en-us/services/container-instances/).
+Most convenient, this is how it was meant to be run. Use Docker locally or [Azure Container Instances](https://azure.microsoft.com/en-us/services/container-instances/).
 
 *Locally:*
 
 ```
-docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e audioFilesList='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e transcriptFilesList='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e languageModelFile='https://pokus.blob.core.windows.net/speech/language.txt' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.18-full 
+docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e audioFilesList='https://pokus.blob.core.windows.net/speech/sample-wavs.txt' -e transcriptFilesList='https://pokus.blob.core.windows.net/speech/source-transcripts.txt' -e languageModelFile='https://pokus.blob.core.windows.net/speech/language.txt' -e speechKey='<KEY>' -e speechRegion='<REGION>' msimecek/speech-pipeline:0.22 
 ```
 
 *Azure Container Instances:*
@@ -93,7 +94,7 @@ docker run -e languageModelId='<GUID>' -e processName='DockerPipeline' -e audioF
 ```
 az group create -n SpeechPipeline -l northeurope
 
-az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.18-full --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "audioFilesList"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "transcriptFilesList"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "languageModelFile"="https://pokus.blob.core.windows.net/speech/language.txt" "speechKey"="<KEY>" "speechRegion"="<REGION>"
+az container create --resource-group SpeechPipeline --name speechjob --cpu 2 --memory 3.5 --image msimecek/speech-pipeline:0.22 --restart-policy Never --environment-variables "languageModelId"="<GUID>" "processName"="DockerPipeline" "audioFilesList"="https://pokus.blob.core.windows.net/speech/sample-wavs.txt" "transcriptFilesList"="https://pokus.blob.core.windows.net/speech/source-transcripts.txt" "languageModelFile"="https://pokus.blob.core.windows.net/speech/language.txt" "speechKey"="<KEY>" "speechRegion"="<REGION>"
 
 az container attach -n speechjob -g SpeechPipeline
 ```
@@ -103,7 +104,6 @@ az container attach -n speechjob -g SpeechPipeline
 Since it's still a PowerShell script, you can run it manually, but make sure to have all dependencies installed on the machine. Namely:
 
 * python 3.7 + pip
-* nodejs + npm
 * git
 * PowerShell Core (for non-Windows systems)
 

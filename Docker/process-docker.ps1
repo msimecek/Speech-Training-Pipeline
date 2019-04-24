@@ -11,11 +11,11 @@ $audioFilesList = $env:audioFilesList
 #$transcriptFilesList = "https://<url>/<file>.txt"
 $transcriptFilesList = $env:transcriptFilesList
 
-# TXT file with language model.
+# (Optional) TXT file with language model.
 #$languageModelFile = "https://<url>/<file>.txt"
 $languageModelFile = $env:languageModelFile
 
-# ID of an already existing language model.
+# (Optional) ID of an already existing language model.
 # If $languageModelFile is provided, this will be overwritten.
 $languageModelId = $env:languageModelId
 
@@ -79,11 +79,6 @@ if (($null -eq $audioFilesList) -or `
     ($null -eq $processName) ) 
 {
     Throw "Required parameter missing."
-}
-
-if (($null -eq $languageModelFile) -and ($null -eq $languageModelId)) 
-{
-    Throw "Either languageModelFile or languageModelId must be provided."
 }
 
 # Defaults
@@ -194,19 +189,37 @@ $scenarios = (/usr/bin/SpeechCLI/speech model list-scenarios --locale $locale --
 $defaultScenarioId = $scenarios[0]
 Write-Host "Selected base model (scenario): $defaultScenarioId"
 
-# If language data provided, create language model. Otherwise expect that $languageModelId was provided.
-if (!($null -eq $languageModelFile)) 
+# If languageModelId provided, we'll just use that.
+if (!($null -eq $languageModelId)) 
+{
+    Write-Host "Language model ID provided. No need to create new language model."
+} else
 {
     Set-SegmentStart -Name "CreateLanguageModel"
-    Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
-    Confirm-BOMStatus -File $rootDir/$processName-source-language.txt
+    # If there's prepopulated language model file, we'll use it to create new language model.
+    if (!($null -eq $languageModelFile)) 
+    {
+        Write-Host "Creating language model from provided language file."
+        Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
+        Confirm-BOMStatus -File $rootDir/$processName-source-language.txt
+    } else
+    {
+        # Otherwise we try to extract language model automatically from transcript and create new language model.
+        Write-Host "Generating new language file."
+        # merge transcript files for individual WAVs and store to file $rootDir/$processName-full-transcript.txt
+        Get-ChildItem $rootDir -Filter "$processName-source-transcript-*.txt" | ForEach-Object { Get-Content $_; "" } | Out-File "$rootDir/$processName-full-transcript.txt"
 
+        # run generateLanguageModel.py
+        python3 /usr/src/repos/CustomSpeech-Processing-Pipeline/LanguageModel/GenerateLanguageModel.py -i "$rootDir/$processName-full-transcript.txt" -o "$rootDir/$processName-source-language.txt"
+        Write-Host "Language file generated."
+    }
+    
     Write-Host "Creating language model."
     $languageDataset = /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --locale $locale --language $rootDir/$processName-source-language.txt --wait | Get-IdFromCli
     Write-Host "Language dataset ID: $languageDataset" -ForegroundColor Green
     $languageModelId = /usr/bin/SpeechCLI/speech model create --name $processName-Lang --locale $locale -lng $languageDataset -s $defaultScenarioId --wait | Get-IdFromCli
     Write-Host "Language model ID: $languageModelId" -ForegroundColor Green
-    
+
     Write-SegmentDuration -Name "CreateLanguageModel"
 }
 
