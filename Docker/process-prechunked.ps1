@@ -63,11 +63,6 @@ if (($null -eq $audioFilesPath) -or `
     Throw "Required parameter missing."
 }
 
-if (($null -eq $languageModelFile) -and ($null -eq $languageModelId)) 
-{
-    Throw "Either languageModelFile or languageModelId must be provided."
-}
-
 # Defaults
 if ($null -eq $locale) {
     $locale = "en-us"
@@ -98,8 +93,6 @@ Set-SegmentStart -Name "ToolsInit"
 Write-Host "Checking dependencies."
 pip3 --version
 python3 --version
-npm --version
-node --version
 /usr/bin/SpeechCLI/speech --version
 
 # Config CLI
@@ -129,14 +122,27 @@ $scenarios = (/usr/bin/SpeechCLI/speech model list-scenarios --locale $locale --
 $defaultScenarioId = $scenarios[0]
 Write-Host "Selected base model (scenario): $defaultScenarioId"
 
-
-# If language data provided, download it and create language model. Otherwise expect that $languageModelId was provided.
-if (!($null -eq $languageModelFile)) 
+# If languageModelId provided, we'll just use that.
+if (!($null -eq $languageModelId)) 
+{
+    Write-Host "Language model ID provided. No need to create new language model."
+} else
 {
     Set-SegmentStart -Name "CreateLanguageModel"
-    Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
-    Confirm-BOMStatus -File $rootDir/$processName-source-language.txt
-
+    # If there's prepopulated language model file, we'll use it to create new language model.
+    if (!($null -eq $languageModelFile)) 
+    {
+        Write-Host "Creating language model from provided language file."
+        Invoke-WebRequest $languageModelFile -OutFile $rootDir/$processName-source-language.txt
+        Confirm-BOMStatus -File $rootDir/$processName-source-language.txt
+    } else
+    {
+        # Otherwise we try to extract language model automatically from transcript and create new language model.
+        Write-Host "Generating new language file."
+        python3 /usr/src/repos/CustomSpeech-Processing-Pipeline/LanguageModel/GenerateLanguageModel.py -i "$transcriptFilePath" -o "$rootDir/$processName-source-language.txt"
+        Write-Host "Language file generated."
+    }
+    
     Write-Host "Creating language model."
     $languageDataset = /usr/bin/SpeechCLI/speech dataset create --name $processName-Lang --locale $locale --language $rootDir/$processName-source-language.txt --wait | Get-IdFromCli
     Write-Host "Language dataset ID: $languageDataset" -ForegroundColor Green
