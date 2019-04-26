@@ -51,12 +51,13 @@ $webhookUrl = $env:webhookUrl
 # (Optional) Custom content to be added to the webhook message.
 $webhookContent = $env:webhookContent
 
+# (Optional) When the supported locales API doesn't work, this disables the check.
+$bypassLocaleCheck = $env:bypassLocaleCheck
+
 #-----------------------------------------------------
 
 # Required checks
-if (($null -eq $audioFilesPath) -or `
-    ($null -eq $transcriptFilePath) -or `
-    ($null -eq $speechKey) -or `
+if (($null -eq $speechKey) -or `
     ($null -eq $speechRegion) -or `
     ($null -eq $processName) ) 
 {
@@ -64,6 +65,14 @@ if (($null -eq $audioFilesPath) -or `
 }
 
 # Defaults
+if ($null -eq $audioFilesPath) {
+    $audioFilesPath = "/mnt/audio_in"
+}
+
+if ($null -eq $transcriptFilePath) {
+    $transcriptFilePath = "/mnt/audio_in/transcript.txt"
+}
+
 if ($null -eq $locale) {
     $locale = "en-us"
 }
@@ -100,13 +109,16 @@ python3 --version
 
 Write-SegmentDuration -Name "ToolsInit"
 
-Set-SegmentStart -Name "LocaleCheck"
-# Before downloading, check if the requested locale is valid.
-$availableLocales = /usr/bin/SpeechCLI/speech model locales --type acoustic --simple
-if (!$availableLocales.ToLower().Contains($locale.ToLower())) {
-    Throw "Locale $locale is not supported with custom speech models."
+if ($null -eq $bypassLocaleCheck) 
+{
+    Set-SegmentStart -Name "LocaleCheck"
+    # Before downloading, check if the requested locale is valid.
+    $availableLocales = /usr/bin/SpeechCLI/speech model locales --type acoustic --simple
+    if (!$availableLocales.ToLower().Contains($locale.ToLower())) {
+        Throw "Locale $locale is not supported with custom speech models."
+    }
+    Write-SegmentDuration -Name "LocaleCheck"
 }
-Write-SegmentDuration -Name "LocaleCheck"
 
 Confirm-BOMStatus -File $transcriptFilePath
 
@@ -118,6 +130,7 @@ Confirm-BOMStatus -File $transcriptFilePath
     | Out-File $transcriptFilePath
 
 # Identify baseline model for given locale
+# TODO: ignore when $defaultScenarioId provided?
 $scenarios = (/usr/bin/SpeechCLI/speech model list-scenarios --locale $locale --simple) -Split '\n'
 $defaultScenarioId = $scenarios[0]
 Write-Host "Selected base model (scenario): $defaultScenarioId"

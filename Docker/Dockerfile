@@ -23,12 +23,10 @@ RUN pip3 install -r /usr/src/repos/CustomSpeech-Processing-Pipeline/Transcriber/
         && pip3 install -r /usr/src/repos/CustomSpeech-Processing-Pipeline/Batcher-Py/requirements.txt \
         && python3 -m spacy download en_core_web_lg
 
-ENV audioFilesPath=/mnt/audio_in
-ENV transcriptFilePath=/mnt/audio_in/transcript.txt
-
 COPY SpeechCLI /usr/bin/SpeechCLI
 COPY process-docker.ps1 /usr/src/process-docker.ps1
 COPY process-prechunked.ps1 /usr/src/process-prechunked.ps1
+COPY process-baseline.ps1 /usr/src/process-baseline.ps1
 COPY start.ps1 /usr/src/start.ps1
 COPY helpers.ps1 /usr/src/helpers.ps1
 
