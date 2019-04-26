@@ -176,19 +176,18 @@ Get-ChildItem $audioFilesPath -Exclude *.txt | % { ffmpeg -i $_ -acodec pcm_s16l
 
 # Run Batcher
 # - machine transcript creation is time consuming
-cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher
-
 Set-SegmentStart -Name "Batcher"
-node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input $rootDir/$processName-Chunks --output "$rootDir/$processName-machine-transcript.txt"
+cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Batcher-Py
+#node batcher.js --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input $rootDir/$processName-Chunks --output "$rootDir/$processName-machine-transcript.txt"
+python3 batcher.py --key $speechKey --region $speechRegion --endpoint $speechEndpoint --input "$rootDir/$processName-Chunks/" --output "$rootDir/$processName-machine-transcript.txt"
 Write-SegmentDuration -Name "Batcher"
-
-# Run Transcriber
-cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Transcriber
 
 New-Item $rootDir/$processName-Cleaned -ItemType Directory -Force
 New-Item $rootDir/$processName-Compiled -ItemType Directory -Force
 
+# Run Transcriber
 Set-SegmentStart -Name "Transcriber"
+cd $rootDir/../repos/CustomSpeech-Processing-Pipeline/Transcriber
 $cleaned = @()
 
 # Encoding cleanup - otherwise transcriber fails on certain characters
